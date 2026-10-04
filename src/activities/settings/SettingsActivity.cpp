@@ -36,6 +36,10 @@
 #include "SettingsList.h"
 #include "SilentRestart.h"
 #include "StatusBarSettingsActivity.h"
+#include "activities/ActivityManager.h"
+#include "lock/LockManager.h"
+#include "lock/PinLockActivity.h"
+#include "lock/PinStorage.h"
 #include "activities/network/WifiSelectionActivity.h"
 #include "activities/reader/GlobalReadingStats.h"
 #include "activities/util/ConfirmationActivity.h"
@@ -289,6 +293,7 @@ void SettingsActivity::rebuildSettingsLists() {
   fileBrowserSettings.clear();
   systemReadingStatsSettings.clear();
   systemGlobalStatsSettings.clear();
+  securityDeviceLockSettings.clear();
 
   if (isFileBrowserView()) {
     fileBrowserSettings = buildFileBrowserSettingsList(getBaseSettingsList());
@@ -324,6 +329,7 @@ void SettingsActivity::rebuildSettingsLists() {
   systemFilesCacheSettings = buildSystemFilesCacheSettingsList(allSettings);
   systemReadingStatsSettings = buildSystemReadingStatsSettingsList(allSettings);
   systemGlobalStatsSettings = buildSystemGlobalStatsSettingsList(allSettings);
+  securityDeviceLockSettings = buildSecurityDeviceLockSettingsList(allSettings);
   controlsSettings = buildControlsSettingsParentList(allSettings);
   controlsPowerSettings = buildControlsPowerSettingsList(allSettings);
   controlsHomeButtonSettings = buildControlsHomeButtonSettingsList(allSettings);
@@ -442,6 +448,9 @@ void SettingsActivity::setCurrentSettingsForCategory() {
         case SettingAction::SystemGlobalStats:
           currentSettings = &systemGlobalStatsSettings;
           break;
+        case SettingAction::SecurityDeviceLock:
+          currentSettings = &securityDeviceLockSettings;
+          break;
         default:
           currentSettings = &systemSettings;
           break;
@@ -491,6 +500,8 @@ StrId SettingsActivity::activeSubmenuTitleId() const {
       return StrId::STR_READING_STATS;
     case SettingAction::SystemGlobalStats:
       return StrId::STR_ALL_TIME_STATS;
+    case SettingAction::SecurityDeviceLock:
+      return StrId::STR_DEVICE_LOCK;
     default:
       return StrId::STR_NONE_OPT;
   }
@@ -1045,7 +1056,39 @@ void SettingsActivity::toggleCurrentSetting() {
     return;
   }
 
-  if (setting.type == SettingType::TOGGLE && setting.valuePtr != nullptr) {
+  if (setting.valuePtr == &CrossPointSettings::deviceLockEnabled) {
+    if (!SETTINGS.deviceLockEnabled) {
+      if (!PinStorage::hasPin()) {
+        startActivityForResult(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::SetPin),
+                               [this](const ActivityResult& res) {
+                                 if (!res.isCancelled) {
+                                   SETTINGS.deviceLockEnabled = 1;
+                                   SETTINGS.saveToFile();
+                                 }
+                                 rebuildSettingsLists();
+                                 requestUpdate();
+                               });
+        return;
+      } else {
+        SETTINGS.deviceLockEnabled = 1;
+      }
+    } else {
+      if (PinStorage::hasPin()) {
+        startActivityForResult(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::VerifyForDisable),
+                               [this](const ActivityResult& res) {
+                                 if (!res.isCancelled) {
+                                   SETTINGS.deviceLockEnabled = 0;
+                                   SETTINGS.saveToFile();
+                                 }
+                                 rebuildSettingsLists();
+                                 requestUpdate();
+                               });
+        return;
+      } else {
+        SETTINGS.deviceLockEnabled = 0;
+      }
+    }
+  } else if (setting.type == SettingType::TOGGLE && setting.valuePtr != nullptr) {
     // Toggle the boolean value using the member pointer
     const bool currentValue = SETTINGS.*(setting.valuePtr);
     SETTINGS.*(setting.valuePtr) = !currentValue;
@@ -1155,6 +1198,30 @@ void SettingsActivity::toggleCurrentSetting() {
       case SettingAction::QuickActions:
         startActivityForResult(std::make_unique<QuickActionsActivity>(renderer, mappedInput), resultHandler);
         break;
+      case SettingAction::SecurityChangePin:
+        if (!PinStorage::hasPin()) {
+          startActivityForResult(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::SetPin),
+                                 [this](const ActivityResult& res) {
+                                   if (!res.isCancelled) {
+                                     SETTINGS.deviceLockEnabled = 1;
+                                     SETTINGS.saveToFile();
+                                   }
+                                   rebuildSettingsLists();
+                                   requestUpdate();
+                                 });
+        } else {
+          startActivityForResult(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::ChangePin),
+                                 [this](const ActivityResult&) {
+                                   rebuildSettingsLists();
+                                   requestUpdate();
+                                 });
+        }
+        break;
+      case SettingAction::SecurityLockNow:
+        LockManager::getInstance().lock(LockTrigger::Manual);
+        activityManager.pushActivity(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::Unlock));
+        break;
+      case SettingAction::SecurityDeviceLock:
       case SettingAction::ReaderFontOptions:
       case SettingAction::ReaderPageLayout:
       case SettingAction::ControlsPowerButton:

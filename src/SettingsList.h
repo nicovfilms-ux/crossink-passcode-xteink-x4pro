@@ -1418,9 +1418,22 @@ inline std::vector<SettingInfo> buildDisplaySleepSettingsList(const std::vector<
   return sleepSettings;
 }
 
+inline std::vector<SettingInfo> buildSecurityDeviceLockSettingsList(const std::vector<SettingInfo>& allSettings) {
+  std::vector<SettingInfo> settings;
+  settings.reserve(6);
+  settings.push_back(SettingInfo::Toggle(StrId::STR_ENABLE_DEVICE_LOCK, &CrossPointSettings::deviceLockEnabled));
+  settings.push_back(SettingInfo::Action(StrId::STR_CHANGE_PIN, SettingAction::SecurityChangePin));
+  settings.push_back(SettingInfo::Action(StrId::STR_LOCK_NOW, SettingAction::SecurityLockNow));
+  settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_SLEEP, &CrossPointSettings::lockOnSleep));
+  settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_BOOT, &CrossPointSettings::lockOnBoot));
+  settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_QUICK_LOCK, &CrossPointSettings::lockOnQuickLock));
+  return settings;
+}
+
 inline std::vector<SettingInfo> buildSystemSettingsParentList(const std::vector<SettingInfo>& allSettings) {
   std::vector<SettingInfo> systemSettings;
-  systemSettings.reserve(9);
+  systemSettings.reserve(10);
+  systemSettings.push_back(SettingInfo::Submenu(StrId::STR_DEVICE_LOCK, SettingAction::SecurityDeviceLock));
   systemSettings.push_back(SettingInfo::Submenu(StrId::STR_SYSTEM_DEVICE, SettingAction::SystemDevice));
   systemSettings.push_back(SettingInfo::Submenu(StrId::STR_SYSTEM_FILES_CACHE, SettingAction::SystemFilesCache));
   systemSettings.push_back(SettingInfo::Submenu(StrId::STR_READING_STATS, SettingAction::SystemReadingStats));

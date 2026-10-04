@@ -483,6 +483,12 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   doc["tiltPageTurnDirectionSchema"] = TILT_DIRECTION_SCHEMA_CURRENT;
   doc["clockDateHasBeenSynced"] = clockDateHasBeenSynced;
   doc["screenInverted"] = screenInverted;
+  doc["deviceLockEnabled"] = deviceLockEnabled;
+  doc["pinHash"] = pinHash;
+  doc["pinSalt"] = pinSalt;
+  doc["lockOnSleep"] = lockOnSleep;
+  doc["lockOnBoot"] = lockOnBoot;
+  doc["lockOnQuickLock"] = lockOnQuickLock;
 }
 
 bool CrossPointSettings::fromJson(JsonVariantConst doc, bool importingCrossPoint) {
@@ -498,6 +504,24 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc, bool importingCrossPoint
       ((doc["tiltPageTurnDirectionSchema"] | static_cast<uint8_t>(1)) < TILT_DIRECTION_SCHEMA_CURRENT);
   if (doc["statusBarChapterPageCount"].isNull()) applyLegacyStatusBarSettings(*this);
   screenInverted = clamp(doc["screenInverted"] | screenInverted, 2, screenInverted);
+  deviceLockEnabled = clamp(doc["deviceLockEnabled"] | deviceLockEnabled, 2, 0);
+  if (!doc["pinHash"].isNull()) {
+    const char* h = doc["pinHash"];
+    if (h) {
+      strncpy(pinHash, h, sizeof(pinHash) - 1);
+      pinHash[sizeof(pinHash) - 1] = '\0';
+    }
+  }
+  if (!doc["pinSalt"].isNull()) {
+    const char* s = doc["pinSalt"];
+    if (s) {
+      strncpy(pinSalt, s, sizeof(pinSalt) - 1);
+      pinSalt[sizeof(pinSalt) - 1] = '\0';
+    }
+  }
+  lockOnSleep = clamp(doc["lockOnSleep"] | lockOnSleep, 2, 1);
+  lockOnBoot = clamp(doc["lockOnBoot"] | lockOnBoot, 2, 1);
+  lockOnQuickLock = clamp(doc["lockOnQuickLock"] | lockOnQuickLock, 2, 1);
 
   for (const auto& info : getBaseSettingsList()) {
     if (!info.key || (!info.valuePtr && !info.value16Ptr && !info.stringOffset)) continue;

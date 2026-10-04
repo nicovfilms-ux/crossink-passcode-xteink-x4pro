@@ -51,6 +51,9 @@ enum class SettingAction {
   KeyboardLayouts,
   DownloadFonts,
   ClockSync,
+  SecurityDeviceLock,
+  SecurityChangePin,
+  SecurityLockNow,
 };
 
 struct SettingInfo {
@@ -253,6 +256,7 @@ class SettingsActivity final : public Activity {
   std::vector<SettingInfo> fileBrowserSettings;
   std::vector<SettingInfo> systemReadingStatsSettings;
   std::vector<SettingInfo> systemGlobalStatsSettings;
+  std::vector<SettingInfo> securityDeviceLockSettings;
   const std::vector<SettingInfo>* currentSettings = nullptr;
 
   bool preserveQuickResumeTimeoutOn = false;

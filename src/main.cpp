@@ -130,6 +130,9 @@ inline esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause() { return ESP_SLEEP_
 #include "util/PowerButtonWakeWatcher.h"
 #include "util/ScreenshotUtil.h"
 #include "util/SleepWakePolicy.h"
+#include "lock/LockManager.h"
+#include "lock/PinLockActivity.h"
+#include "lock/PinStorage.h"
 
 GfxRenderer renderer(display);
 MappedInputManager mappedInputManager(gpio, renderer);
@@ -657,6 +660,13 @@ void notifyQuickLockChanged() {
   mappedInputManager.clearInjectedReleases();
   LOG_DBG("MAIN", "Quick Lock %s", locked ? "enabled" : "disabled");
   if (locked) {
+    if (LockManager::getInstance().shouldLockOnQuickLock()) {
+      LockManager::getInstance().lock(LockTrigger::QuickLock);
+      buttonShortcutController.toggleQuickLock(millis(), QuickLockTrigger::None, false);
+      activityManager.pushActivity(std::make_unique<PinLockActivity>(
+          renderer, mappedInputManager, PinLockActivity::Mode::Unlock));
+      return;
+    }
     APP_STATE.quickLockRestoreFrontlight = Frontlight.isOn();
     Frontlight.setOn(false);
     activityManager.notifyInputLockChanged(true);
@@ -1636,6 +1646,16 @@ void setup() {
   BatteryDiagnosticLog::record(BatteryDiagnosticLog::Event::Wake, BoardConfig::ACTIVE.name,
                                sleepSyncBoot ? "SleepSync" : wakeupRouteName(wakeupReason));
   const bool isSleepWake = wakeupReason == HalGPIO::WakeupReason::PowerButton;
+  LockManager::getInstance().init();
+  if (isSleepWake && !isSleepSyncWake && !sleepSyncBoot) {
+    if (LockManager::getInstance().shouldLockOnSleep()) {
+      LockManager::getInstance().lock(LockTrigger::SleepWake);
+    }
+  } else if (!isSleepWake && !isSleepSyncWake && !sleepSyncBoot && !isSilentReboot) {
+    if (LockManager::getInstance().shouldLockOnBoot()) {
+      LockManager::getInstance().lock(LockTrigger::Boot);
+    }
+  }
   I18N.setLanguage(static_cast<Language>(SETTINGS.language));
   // Normal boot store deferral adapted from Sichroteph/YACP commit
   // 20af8aee8d3e1d560456753b08d1f52e5488621f (MIT). Accessors load these
@@ -1862,6 +1882,15 @@ void setup() {
       LOG_ERR("MAIN", "Minimal network boot target failed; returning home");
       silentRestart();
     }
+  } else if (LockManager::getInstance().isLocked()) {
+    const bool shouldResumeReader = !APP_STATE.openEpubPath.empty() && APP_STATE.lastSleepFromReader &&
+                                    !mappedInputManager.isPressed(MappedInputManager::Button::Back) &&
+                                    (APP_STATE.readerActivityLoadCount == 0);
+    const auto resumeTarget = shouldResumeReader ? PinLockActivity::ResumeTarget::Reader
+                                                 : PinLockActivity::ResumeTarget::Home;
+    const std::string resumePath = shouldResumeReader ? APP_STATE.openEpubPath : "";
+    activityManager.replaceActivity(std::make_unique<PinLockActivity>(
+        renderer, mappedInputManager, PinLockActivity::Mode::Unlock, resumeTarget, resumePath));
   } else if (resume == BootResume::Silent && snapshotTarget == SILENT_REBOOT_TARGET_READER &&
              !APP_STATE.openEpubPath.empty()) {
     activityManager.goToReader(APP_STATE.openEpubPath, false, false, cleanImageBaseOnEntry);

@@ -654,6 +654,14 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t trackReadingStats = 1;
 #endif
 
+  // Device Lock / PIN Settings
+  uint8_t deviceLockEnabled = 0;
+  char pinHash[65] = "";
+  char pinSalt[17] = "";
+  uint8_t lockOnSleep = 1;
+  uint8_t lockOnBoot = 1;
+  uint8_t lockOnQuickLock = 1;
+
   ~CrossPointSettings() = default;
 
   static constexpr uint16_t POWER_BUTTON_WAKE_SHORT_MS = 10;
