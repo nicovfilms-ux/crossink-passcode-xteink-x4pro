@@ -30,6 +30,7 @@ void PinLockActivity::onEnter() {
   errorMessage_.clear();
   errorUntilMs_ = 0;
   needsFullRepaint_ = true;
+  isFirstRender_ = true;
   requestUpdate();
 }
 
@@ -327,6 +328,12 @@ void PinLockActivity::renderDotsOnly() {
 
 void PinLockActivity::render(RenderLock&&) {
   setupLayout();
+
+  if (isFirstRender_) {
+    isFirstRender_ = false;
+    renderer.clearScreen();
+    renderer.displayBuffer(HalDisplay::FULL_REFRESH);
+  }
 
   renderer.clearScreen();
 

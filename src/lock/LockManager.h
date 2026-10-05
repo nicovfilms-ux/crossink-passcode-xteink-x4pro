@@ -31,7 +31,7 @@ class LockManager {
 
   bool shouldLockOnBoot() const;
   bool shouldLockOnSleep() const;
-  bool shouldLockOnSleepWake(bool fromTimeout, uint32_t elapsedSleepSeconds) const;
+  bool shouldLockOnSleepWake(bool fromTimeout, uint32_t elapsedSleepSeconds, bool forcePinLock = false) const;
   bool shouldLockOnQuickLock() const;
 
   void lock(LockTrigger trigger);

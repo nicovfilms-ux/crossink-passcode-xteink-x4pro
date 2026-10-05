@@ -31,6 +31,7 @@ inline bool isPowerButtonActionAvailableOutsideReader(const CrossPointSettings::
     case CrossPointSettings::SHORT_PWRBTN::CALIBRE_WIRELESS:
     case CrossPointSettings::SHORT_PWRBTN::JOIN_NETWORK:
     case CrossPointSettings::SHORT_PWRBTN::CREATE_HOTSPOT:
+    case CrossPointSettings::SHORT_PWRBTN::TOGGLE_DARK_MODE:
     case CrossPointSettings::SHORT_PWRBTN::TOGGLE_FRONTLIGHT:
     case CrossPointSettings::SHORT_PWRBTN::TOGGLE_TOUCHSCREEN:
       return true;
@@ -44,7 +45,6 @@ inline bool isPowerButtonActionAvailableOutsideReader(const CrossPointSettings::
     case CrossPointSettings::SHORT_PWRBTN::READING_STATS:
     case CrossPointSettings::SHORT_PWRBTN::CYCLE_PAGE_TURN:
     case CrossPointSettings::SHORT_PWRBTN::TOGGLE_TILT_PAGE_TURN:
-    case CrossPointSettings::SHORT_PWRBTN::TOGGLE_DARK_MODE:
     case CrossPointSettings::SHORT_PWRBTN::FOOTNOTES:
     case CrossPointSettings::SHORT_PWRBTN::FILE_BROWSER:
     case CrossPointSettings::SHORT_PWRBTN::CREATE_CLIPPING:

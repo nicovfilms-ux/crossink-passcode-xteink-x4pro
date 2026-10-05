@@ -367,10 +367,12 @@ constexpr uint32_t READER_RENDER_TASK_STACK_BYTES = 16384;
 #ifndef SIMULATOR
 RTC_DATA_ATTR static uint64_t rtcSleepTimestampUs = 0;
 RTC_DATA_ATTR static bool rtcSleepFromTimeout = false;
+RTC_DATA_ATTR static bool rtcSleepForcePinLock = false;
 RTC_DATA_ATTR static uint32_t rtcSleepMagic = 0;
 #else
 static uint64_t rtcSleepTimestampUs = 0;
 static bool rtcSleepFromTimeout = false;
+static bool rtcSleepForcePinLock = false;
 static uint32_t rtcSleepMagic = 0;
 #endif
 constexpr uint32_t RTC_SLEEP_MAGIC = 0x50494E4C;  // 'PINL'
@@ -674,8 +676,8 @@ void notifyQuickLockChanged() {
     if (LockManager::getInstance().shouldLockOnQuickLock()) {
       LockManager::getInstance().lock(LockTrigger::QuickLock);
       buttonShortcutController.toggleQuickLock(millis(), QuickLockTrigger::None, false);
-      activityManager.pushActivity(std::make_unique<PinLockActivity>(
-          renderer, mappedInputManager, PinLockActivity::Mode::Unlock));
+      rtcSleepForcePinLock = true;
+      enterDeepSleep(false);
       return;
     }
     APP_STATE.quickLockRestoreFrontlight = Frontlight.isOn();
@@ -722,8 +724,23 @@ bool handleGlobalPowerButtonAction(const CrossPointSettings::SHORT_PWRBTN action
                                    const QuickLockTrigger quickLockTrigger) {
   switch (action) {
     case CrossPointSettings::SHORT_PWRBTN::SLEEP:
+      if (mappedInputManager.getHeldTime() >= SETTINGS.getPowerButtonLongPressDuration() ||
+          gpio.getPowerButtonHeldTime() >= SETTINGS.getPowerButtonLongPressDuration()) {
+        if (PinStorage::isLockEnabled()) {
+          LockManager::getInstance().lock(LockTrigger::QuickLock);
+          rtcSleepForcePinLock = true;
+        }
+      }
       enterDeepSleep();
       return true;
+    case CrossPointSettings::SHORT_PWRBTN::TOGGLE_DARK_MODE: {
+      RenderLock lock;
+      SETTINGS.screenInverted = SETTINGS.screenInverted ? 0 : 1;
+      display.setInverted(SETTINGS.screenInverted != 0);
+      activityManager.persistGlobalSettings();
+      activityManager.requestUpdate();
+      return true;
+    }
     case CrossPointSettings::SHORT_PWRBTN::QUICK_LOCK:
       if (quickLockTrigger == QuickLockTrigger::None) {
         LOG_ERR("MAIN", "Quick Lock requested without an input trigger");
@@ -1101,7 +1118,10 @@ bool handleX4ProHomeKeyShortcuts() {
     // A hold is a separate gesture, not the second half of a double tap.
     x4ProHomeKeyTapPending = false;
     if (SETTINGS.homeButtonLongPressAction == CrossPointSettings::HOME_BUTTON_READER_MENU) {
-      return completedPendingTap;
+      if (activityManager.isReaderActivity()) {
+        return activityManager.openReaderMenuFromShortcut();
+      }
+      return handleGlobalPowerButtonAction(CrossPointSettings::SHORT_PWRBTN::TOGGLE_DARK_MODE);
     }
     executeX4ProHomeButtonAction(SETTINGS.homeButtonLongPressAction, QuickLockTrigger::HomeLongPress);
     return true;
@@ -1377,9 +1397,10 @@ void enterDeepSleep(bool fromTimeout) {
   const bool powerHeldAtSleep = gpio.isPressed(HalGPIO::BTN_POWER);
 
   const bool isQuickResumeSleep =
-      SETTINGS.sleepScreen == CrossPointSettings::SLEEP_SCREEN_MODE::QUICK_RESUME ||
-      (fromTimeout &&
-       SETTINGS.quickResumeSleepScreen == CrossPointSettings::QUICK_RESUME_SLEEP_SCREEN::QUICK_RESUME_AFTER_TIMEOUT);
+      !rtcSleepForcePinLock &&
+      (SETTINGS.sleepScreen == CrossPointSettings::SLEEP_SCREEN_MODE::QUICK_RESUME ||
+       (fromTimeout &&
+        SETTINGS.quickResumeSleepScreen == CrossPointSettings::QUICK_RESUME_SLEEP_SCREEN::QUICK_RESUME_AFTER_TIMEOUT));
   // Every sleep mode leaves a complete retained frame on the e-ink panel. Keep
   // it visible until the first useful reader or Home paint replaces it.
   APP_STATE.showBootScreen = false;
@@ -1669,9 +1690,12 @@ void setup() {
   if (isSleepWake && !isSleepSyncWake && !sleepSyncBoot) {
     bool fromTimeout = false;
     uint32_t elapsedSleepSec = 0;
+    bool forcePinLock = false;
     if (rtcSleepMagic == RTC_SLEEP_MAGIC) {
       rtcSleepMagic = 0;
       fromTimeout = rtcSleepFromTimeout;
+      forcePinLock = rtcSleepForcePinLock;
+      rtcSleepForcePinLock = false;
 #ifndef SIMULATOR
       const uint64_t wakeNowUs = esp_rtc_get_time_us();
       if (wakeNowUs >= rtcSleepTimestampUs) {
@@ -1684,7 +1708,7 @@ void setup() {
       }
 #endif
     }
-    if (LockManager::getInstance().shouldLockOnSleepWake(fromTimeout, elapsedSleepSec)) {
+    if (LockManager::getInstance().shouldLockOnSleepWake(fromTimeout, elapsedSleepSec, forcePinLock)) {
       LockManager::getInstance().lock(LockTrigger::SleepWake);
     }
   } else if (!isSleepWake && !isSleepSyncWake && !sleepSyncBoot && !isSilentReboot) {
