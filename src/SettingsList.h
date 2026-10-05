@@ -1427,9 +1427,10 @@ inline std::vector<SettingInfo> buildDisplaySleepSettingsList(const std::vector<
 
 inline std::vector<SettingInfo> buildSecurityDeviceLockSettingsList(const std::vector<SettingInfo>& allSettings) {
   std::vector<SettingInfo> settings;
-  settings.reserve(7);
+  settings.reserve(8);
   settings.push_back(SettingInfo::Toggle(StrId::STR_ENABLE_DEVICE_LOCK, &CrossPointSettings::deviceLockEnabled));
   settings.push_back(SettingInfo::Action(StrId::STR_CHANGE_PIN, SettingAction::SecurityChangePin));
+  settings.push_back(SettingInfo::Action(StrId::STR_CHANGE_SECURITY_QUESTION, SettingAction::SecurityChangeQuestion));
   settings.push_back(SettingInfo::Action(StrId::STR_LOCK_NOW, SettingAction::SecurityLockNow));
   addSettingByName(settings, allSettings, StrId::STR_PIN_TIMEOUT);
   settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_SLEEP, &CrossPointSettings::lockOnSleep));

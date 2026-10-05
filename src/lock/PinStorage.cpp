@@ -92,6 +92,88 @@ bool PinStorage::checkAndApplySdRecovery() {
   return false;
 }
 
+bool PinStorage::hasSecurityQuestion() {
+  return SETTINGS.securityAnswerHash[0] != '\0' && SETTINGS.securityAnswerSalt[0] != '\0';
+}
+
+uint8_t PinStorage::getSecurityQuestion() {
+  return SETTINGS.securityQuestion;
+}
+
+std::string PinStorage::normalizeAnswer(const char* answer) {
+  if (answer == nullptr) return "";
+
+  // Skip leading whitespace
+  const char* start = answer;
+  while (*start && std::isspace(static_cast<unsigned char>(*start))) {
+    ++start;
+  }
+  if (*start == '\0') return "";
+
+  // Skip trailing whitespace
+  const char* end = start + strlen(start) - 1;
+  while (end > start && std::isspace(static_cast<unsigned char>(*end))) {
+    --end;
+  }
+
+  std::string normalized;
+  normalized.reserve(end - start + 1);
+  for (const char* p = start; p <= end; ++p) {
+    const unsigned char c1 = static_cast<unsigned char>(*p);
+    if (c1 == 0xC3 && (p + 1) <= end) {
+      const unsigned char c2 = static_cast<unsigned char>(*(p + 1));
+      if (c2 == 0xA1 || c2 == 0x81) { normalized.push_back('a'); ++p; continue; }  // á, Á
+      if (c2 == 0xA9 || c2 == 0x89) { normalized.push_back('e'); ++p; continue; }  // é, É
+      if (c2 == 0xAD || c2 == 0x8D) { normalized.push_back('i'); ++p; continue; }  // í, Í
+      if (c2 == 0xB3 || c2 == 0x93) { normalized.push_back('o'); ++p; continue; }  // ó, Ó
+      if (c2 == 0xBA || c2 == 0x9A || c2 == 0xBC || c2 == 0x9C) { normalized.push_back('u'); ++p; continue; }  // ú, Ú, ü, Ü
+    }
+    normalized.push_back(static_cast<char>(std::tolower(c1)));
+  }
+  return normalized;
+}
+
+bool PinStorage::setSecurityQuestion(const uint8_t questionIdx, const char* answer) {
+  if (answer == nullptr) return false;
+  const std::string normalized = normalizeAnswer(answer);
+  if (normalized.empty()) return false;
+
+  char salt[SALT_LEN + 1];
+  generateSalt(salt, sizeof(salt));
+
+  char hash[HASH_LEN + 1];
+  computeHash(salt, normalized.c_str(), hash, sizeof(hash));
+
+  SETTINGS.securityQuestion = questionIdx;
+  strncpy(SETTINGS.securityAnswerSalt, salt, sizeof(SETTINGS.securityAnswerSalt) - 1);
+  SETTINGS.securityAnswerSalt[sizeof(SETTINGS.securityAnswerSalt) - 1] = '\0';
+
+  strncpy(SETTINGS.securityAnswerHash, hash, sizeof(SETTINGS.securityAnswerHash) - 1);
+  SETTINGS.securityAnswerHash[sizeof(SETTINGS.securityAnswerHash) - 1] = '\0';
+
+  const bool saved = SETTINGS.saveToFile();
+  LOG_INF("PIN", "Security question %u configured and saved (status: %d)", questionIdx, saved);
+  return saved;
+}
+
+bool PinStorage::verifySecurityAnswer(const char* answer) {
+  if (!hasSecurityQuestion() || answer == nullptr) return false;
+  const std::string normalized = normalizeAnswer(answer);
+  if (normalized.empty()) return false;
+
+  char computed[HASH_LEN + 1];
+  computeHash(SETTINGS.securityAnswerSalt, normalized.c_str(), computed, sizeof(computed));
+
+  const size_t storedLen = strlen(SETTINGS.securityAnswerHash);
+  if (storedLen != HASH_LEN) return false;
+
+  int diff = 0;
+  for (size_t i = 0; i < HASH_LEN; ++i) {
+    diff |= (computed[i] ^ SETTINGS.securityAnswerHash[i]);
+  }
+  return (diff == 0);
+}
+
 void PinStorage::generateSalt(char* outSalt, const size_t maxLen) {
   if (outSalt == nullptr || maxLen <= SALT_LEN) return;
 

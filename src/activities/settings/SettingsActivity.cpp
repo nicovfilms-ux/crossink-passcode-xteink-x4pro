@@ -1064,6 +1064,10 @@ void SettingsActivity::toggleCurrentSetting() {
                                  if (!res.isCancelled) {
                                    SETTINGS.deviceLockEnabled = 1;
                                    SETTINGS.saveToFile();
+                                   if (!PinStorage::hasSecurityQuestion()) {
+                                     promptSecurityQuestionSetup();
+                                     return;
+                                   }
                                  }
                                  rebuildSettingsLists();
                                  requestUpdate();
@@ -1071,6 +1075,10 @@ void SettingsActivity::toggleCurrentSetting() {
         return;
       } else {
         SETTINGS.deviceLockEnabled = 1;
+        if (!PinStorage::hasSecurityQuestion()) {
+          promptSecurityQuestionSetup();
+          return;
+        }
       }
     } else {
       if (PinStorage::hasPin()) {
@@ -1205,17 +1213,28 @@ void SettingsActivity::toggleCurrentSetting() {
                                    if (!res.isCancelled) {
                                      SETTINGS.deviceLockEnabled = 1;
                                      SETTINGS.saveToFile();
+                                     if (!PinStorage::hasSecurityQuestion()) {
+                                       promptSecurityQuestionSetup();
+                                       return;
+                                     }
                                    }
                                    rebuildSettingsLists();
                                    requestUpdate();
                                  });
         } else {
           startActivityForResult(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::ChangePin),
-                                 [this](const ActivityResult&) {
+                                 [this](const ActivityResult& res) {
+                                   if (!res.isCancelled && !PinStorage::hasSecurityQuestion()) {
+                                     promptSecurityQuestionSetup();
+                                     return;
+                                   }
                                    rebuildSettingsLists();
                                    requestUpdate();
                                  });
         }
+        break;
+      case SettingAction::SecurityChangeQuestion:
+        promptSecurityQuestionSetup();
         break;
       case SettingAction::SecurityLockNow:
         LockManager::getInstance().lock(LockTrigger::Manual);
@@ -1639,4 +1658,43 @@ void SettingsActivity::render(RenderLock&&) {
 
   // Always use standard refresh for settings screen
   renderer.displayBuffer();
+}
+
+void SettingsActivity::promptSecurityQuestionSetup() {
+  std::vector<std::string> options = {
+      tr(STR_QUESTION_GREATEST_LOVE),
+      tr(STR_QUESTION_FIRST_PET),
+      tr(STR_QUESTION_FAVORITE_COUNTRY)
+  };
+  startActivityForResult(
+      std::make_unique<OptionSelectionActivity>(
+          renderer, mappedInput, "SecurityQuestionPicker",
+          StrId::STR_SELECT_SECURITY_QUESTION, options, SETTINGS.securityQuestion),
+      [this](const ActivityResult& result) {
+        if (result.isCancelled) return;
+        const auto* sel = std::get_if<OptionSelectionResult>(&result.data);
+        if (!sel) return;
+        const uint8_t chosenIdx = sel->index;
+        std::string qTitle;
+        if (chosenIdx == 0) {
+          qTitle = tr(STR_QUESTION_GREATEST_LOVE);
+        } else if (chosenIdx == 1) {
+          qTitle = tr(STR_QUESTION_FIRST_PET);
+        } else {
+          qTitle = tr(STR_QUESTION_FAVORITE_COUNTRY);
+        }
+
+        startActivityForResult(
+            std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, qTitle, "", 40, InputType::Text, 1),
+            [this, chosenIdx](const ActivityResult& kbRes) {
+              if (!kbRes.isCancelled) {
+                const auto* kb = std::get_if<KeyboardResult>(&kbRes.data);
+                if (kb && !kb->text.empty()) {
+                  PinStorage::setSecurityQuestion(chosenIdx, kb->text.c_str());
+                }
+              }
+              rebuildSettingsLists();
+              requestUpdate();
+            });
+      });
 }

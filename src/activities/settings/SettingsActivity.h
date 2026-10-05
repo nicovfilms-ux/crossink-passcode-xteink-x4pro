@@ -54,6 +54,7 @@ enum class SettingAction {
   SecurityDeviceLock,
   SecurityChangePin,
   SecurityLockNow,
+  SecurityChangeQuestion,
 };
 
 struct SettingInfo {
@@ -319,6 +320,7 @@ class SettingsActivity final : public Activity {
   void syncQuickResumeTimeoutForSleepScreen(bool sleepScreenChanged, bool quickResumeTimeoutChanged);
   void closeRootSettings();
   bool isFileBrowserView() const { return view == View::FileBrowser; }
+  void promptSecurityQuestionSetup();
 
  public:
   explicit SettingsActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, bool dismissOnUpSwipe = false,

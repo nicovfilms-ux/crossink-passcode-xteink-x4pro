@@ -9,6 +9,7 @@
 #include "CrossPointSettings.h"
 #include "Logging.h"
 #include "activities/ActivityManager.h"
+#include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "components/icons/tablerFilledIcons.h"
 #include "fontIds.h"
@@ -85,6 +86,16 @@ void PinLockActivity::setupLayout() {
         cancelW,
         cancelH
     });
+  } else {
+    const int forgotW = 240;
+    const int forgotH = 38;
+    keys_.push_back({
+        'F',
+        startX + (totalW - forgotW) / 2,
+        startY + totalH + 14,
+        forgotW,
+        forgotH
+    });
   }
 }
 
@@ -132,6 +143,8 @@ void PinLockActivity::handleKeyPress(const char key) {
   } else if (key == 'X') {
     result.isCancelled = true;
     activityManager.popActivity();
+  } else if (key == 'F') {
+    onForgotPin();
   }
 }
 
@@ -249,6 +262,49 @@ void PinLockActivity::onUnlockSuccess() {
   }
 }
 
+void PinLockActivity::onForgotPin() {
+  if (!PinStorage::hasSecurityQuestion()) {
+    errorMessage_ = tr(STR_NO_SECURITY_QUESTION);
+    errorUntilMs_ = millis() + 2500;
+    needsFullRepaint_ = true;
+    requestUpdate();
+    return;
+  }
+
+  const uint8_t qIdx = PinStorage::getSecurityQuestion();
+  std::string qTitle;
+  if (qIdx == 0) {
+    qTitle = tr(STR_QUESTION_GREATEST_LOVE);
+  } else if (qIdx == 1) {
+    qTitle = tr(STR_QUESTION_FIRST_PET);
+  } else {
+    qTitle = tr(STR_QUESTION_FAVORITE_COUNTRY);
+  }
+
+  startActivityForResult(
+      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, qTitle, "", 40, InputType::Text, 1),
+      [this](const ActivityResult& actRes) {
+        if (actRes.isCancelled) {
+          needsFullRepaint_ = true;
+          requestUpdate();
+          return;
+        }
+        const auto* kb = std::get_if<KeyboardResult>(&actRes.data);
+        if (kb && !kb->text.empty()) {
+          if (PinStorage::verifySecurityAnswer(kb->text.c_str())) {
+            // Opción A: Desbloquea y desactiva el PIN
+            PinStorage::clearPin();
+            onUnlockSuccess();
+          } else {
+            errorMessage_ = tr(STR_INCORRECT_ANSWER);
+            errorUntilMs_ = millis() + 2500;
+            needsFullRepaint_ = true;
+            requestUpdate();
+          }
+        }
+      });
+}
+
 void PinLockActivity::renderDotsOnly() {
   RenderLock lock;
   renderer.fillRect(dotsX_ + 12, dotsY_ + 2, dotsW_ - 24, dotsH_ - 4, false);
@@ -343,6 +399,11 @@ void PinLockActivity::render(RenderLock&&) {
       const int lw = renderer.getTextWidth(UI_10_FONT_ID, cancel, EpdFontFamily::BOLD);
       const int lh = renderer.getLineHeight(UI_10_FONT_ID);
       renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, cancel, true, EpdFontFamily::BOLD);
+    } else if (k.key == 'F') {
+      const std::string forgot = tr(STR_FORGOT_PIN);
+      const int lw = renderer.getTextWidth(UI_10_FONT_ID, forgot.c_str(), EpdFontFamily::REGULAR);
+      const int lh = renderer.getLineHeight(UI_10_FONT_ID);
+      renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, forgot.c_str(), true, EpdFontFamily::REGULAR);
     }
   }
 

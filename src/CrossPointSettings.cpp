@@ -490,6 +490,9 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   doc["lockOnBoot"] = lockOnBoot;
   doc["lockOnQuickLock"] = lockOnQuickLock;
   doc["pinTimeoutMinutes"] = pinTimeoutMinutes;
+  doc["securityQuestion"] = securityQuestion;
+  doc["securityAnswerHash"] = securityAnswerHash;
+  doc["securityAnswerSalt"] = securityAnswerSalt;
 }
 
 bool CrossPointSettings::fromJson(JsonVariantConst doc, bool importingCrossPoint) {
@@ -524,6 +527,21 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc, bool importingCrossPoint
   lockOnBoot = clamp(doc["lockOnBoot"] | lockOnBoot, 2, 1);
   lockOnQuickLock = clamp(doc["lockOnQuickLock"] | lockOnQuickLock, 2, 1);
   pinTimeoutMinutes = doc["pinTimeoutMinutes"] | pinTimeoutMinutes;
+  securityQuestion = clamp(doc["securityQuestion"] | securityQuestion, 3, 0);
+  if (!doc["securityAnswerHash"].isNull()) {
+    const char* ah = doc["securityAnswerHash"];
+    if (ah) {
+      strncpy(securityAnswerHash, ah, sizeof(securityAnswerHash) - 1);
+      securityAnswerHash[sizeof(securityAnswerHash) - 1] = '\0';
+    }
+  }
+  if (!doc["securityAnswerSalt"].isNull()) {
+    const char* as = doc["securityAnswerSalt"];
+    if (as) {
+      strncpy(securityAnswerSalt, as, sizeof(securityAnswerSalt) - 1);
+      securityAnswerSalt[sizeof(securityAnswerSalt) - 1] = '\0';
+    }
+  }
 
   for (const auto& info : getBaseSettingsList()) {
     if (!info.key || (!info.valuePtr && !info.value16Ptr && !info.stringOffset)) continue;

@@ -662,6 +662,9 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t lockOnBoot = 1;
   uint8_t lockOnQuickLock = 1;
   uint8_t pinTimeoutMinutes = 15;
+  uint8_t securityQuestion = 0;
+  char securityAnswerHash[65] = "";
+  char securityAnswerSalt[17] = "";
 
   ~CrossPointSettings() = default;
 

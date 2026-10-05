@@ -71,6 +71,7 @@ class PinLockActivity final : public Activity {
   void handleKeyPress(char key);
   void submitCurrentPin();
   void onUnlockSuccess();
+  void onForgotPin();
   void renderDotsOnly();
   std::string getPromptText() const;
 };

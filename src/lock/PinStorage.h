@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 class PinStorage {
  public:
@@ -28,6 +29,20 @@ class PinStorage {
   // Checks if a recovery reset file exists on the SD card (/.crosspoint/pin_reset.txt or /pin_reset.txt)
   // If found, resets the PIN and deletes/renames the file so the user is never locked out.
   static bool checkAndApplySdRecovery();
+
+  // Security question recovery
+  enum SecurityQuestion : uint8_t {
+    GreatestLove = 0,
+    FirstPet = 1,
+    FavoriteCountry = 2,
+    QUESTION_COUNT = 3
+  };
+
+  static bool hasSecurityQuestion();
+  static uint8_t getSecurityQuestion();
+  static bool setSecurityQuestion(uint8_t questionIdx, const char* answer);
+  static bool verifySecurityAnswer(const char* answer);
+  static std::string normalizeAnswer(const char* answer);
 
   // Cryptographic utilities
   static void generateSalt(char* outSalt, size_t maxLen);
