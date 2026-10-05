@@ -823,6 +823,13 @@ inline const std::vector<SettingInfo>& getBaseSettingsList() {
     add(SettingInfo::Toggle(StrId::STR_TRACK_READING_STATS, &CrossPointSettings::trackReadingStats, "trackReadingStats",
                             StrId::STR_CAT_SYSTEM));
 #endif
+    add(SettingInfo::Enum(
+            StrId::STR_PIN_TIMEOUT, &CrossPointSettings::pinTimeoutMinutes,
+            {StrId::STR_TIMEOUT_IMMEDIATELY, StrId::STR_TIMEOUT_5_MIN, StrId::STR_TIMEOUT_15_MIN,
+             StrId::STR_TIMEOUT_30_MIN, StrId::STR_TIMEOUT_1_HOUR, StrId::STR_TIMEOUT_2_HOURS,
+             StrId::STR_TIMEOUT_4_HOURS},
+            "pinTimeoutMinutes", StrId::STR_SECURITY)
+            .withEnumRawValues({0, 5, 15, 30, 60, 120, 240}));
 
     // Frontlight quick-panel state: persisted + web-exposed, category-less so
     // it stays off the Settings screen (edited from the swipe-down panel).
@@ -1420,10 +1427,11 @@ inline std::vector<SettingInfo> buildDisplaySleepSettingsList(const std::vector<
 
 inline std::vector<SettingInfo> buildSecurityDeviceLockSettingsList(const std::vector<SettingInfo>& allSettings) {
   std::vector<SettingInfo> settings;
-  settings.reserve(6);
+  settings.reserve(7);
   settings.push_back(SettingInfo::Toggle(StrId::STR_ENABLE_DEVICE_LOCK, &CrossPointSettings::deviceLockEnabled));
   settings.push_back(SettingInfo::Action(StrId::STR_CHANGE_PIN, SettingAction::SecurityChangePin));
   settings.push_back(SettingInfo::Action(StrId::STR_LOCK_NOW, SettingAction::SecurityLockNow));
+  addSettingByName(settings, allSettings, StrId::STR_PIN_TIMEOUT);
   settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_SLEEP, &CrossPointSettings::lockOnSleep));
   settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_BOOT, &CrossPointSettings::lockOnBoot));
   settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_QUICK_LOCK, &CrossPointSettings::lockOnQuickLock));

@@ -31,6 +31,32 @@ bool LockManager::shouldLockOnSleep() const {
   return PinStorage::isLockEnabled() && (SETTINGS.lockOnSleep != 0);
 }
 
+bool LockManager::shouldLockOnSleepWake(const bool fromTimeout, const uint32_t elapsedSleepSeconds) const {
+  if (!PinStorage::isLockEnabled()) {
+    return false;
+  }
+  if (SETTINGS.lockOnSleep == 0) {
+    return false;
+  }
+  // If the user manually locked / suspended with the button: lock immediately!
+  if (!fromTimeout) {
+    LOG_INF("LOCK", "Button sleep: requiring PIN immediately on wake");
+    return true;
+  }
+  // Inactivity auto-sleep: check deeper PIN timeout
+  const uint32_t pinTimeoutSec = static_cast<uint32_t>(SETTINGS.pinTimeoutMinutes) * 60;
+  if (pinTimeoutSec == 0) {
+    LOG_INF("LOCK", "PIN timeout is 0 (Immediately): requiring PIN on wake");
+    return true;
+  }
+  const bool expired = (elapsedSleepSeconds >= pinTimeoutSec);
+  LOG_INF("LOCK", "Inactivity sleep wake: elapsed=%lu s, threshold=%lu s -> %s",
+          static_cast<unsigned long>(elapsedSleepSeconds),
+          static_cast<unsigned long>(pinTimeoutSec),
+          expired ? "LOCKED" : "UNLOCKED (grace period)");
+  return expired;
+}
+
 bool LockManager::shouldLockOnQuickLock() const {
   return PinStorage::isLockEnabled() && (SETTINGS.lockOnQuickLock != 0);
 }

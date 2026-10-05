@@ -661,6 +661,7 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t lockOnSleep = 1;
   uint8_t lockOnBoot = 1;
   uint8_t lockOnQuickLock = 1;
+  uint8_t pinTimeoutMinutes = 15;
 
   ~CrossPointSettings() = default;
 

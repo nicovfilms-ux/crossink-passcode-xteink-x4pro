@@ -489,6 +489,7 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   doc["lockOnSleep"] = lockOnSleep;
   doc["lockOnBoot"] = lockOnBoot;
   doc["lockOnQuickLock"] = lockOnQuickLock;
+  doc["pinTimeoutMinutes"] = pinTimeoutMinutes;
 }
 
 bool CrossPointSettings::fromJson(JsonVariantConst doc, bool importingCrossPoint) {
@@ -522,6 +523,7 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc, bool importingCrossPoint
   lockOnSleep = clamp(doc["lockOnSleep"] | lockOnSleep, 2, 1);
   lockOnBoot = clamp(doc["lockOnBoot"] | lockOnBoot, 2, 1);
   lockOnQuickLock = clamp(doc["lockOnQuickLock"] | lockOnQuickLock, 2, 1);
+  pinTimeoutMinutes = doc["pinTimeoutMinutes"] | pinTimeoutMinutes;
 
   for (const auto& info : getBaseSettingsList()) {
     if (!info.key || (!info.valuePtr && !info.value16Ptr && !info.stringOffset)) continue;

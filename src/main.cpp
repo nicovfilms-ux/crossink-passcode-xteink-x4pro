@@ -364,6 +364,17 @@ constexpr uint32_t SILENT_READER_PAGE_BUILD_AUTO_TURN = 1U << 0;
 constexpr uint32_t NETWORK_RENDER_TASK_STACK_BYTES = 8192;
 constexpr uint32_t READER_RENDER_TASK_STACK_BYTES = 16384;
 
+#ifndef SIMULATOR
+RTC_DATA_ATTR static uint64_t rtcSleepTimestampUs = 0;
+RTC_DATA_ATTR static bool rtcSleepFromTimeout = false;
+RTC_DATA_ATTR static uint32_t rtcSleepMagic = 0;
+#else
+static uint64_t rtcSleepTimestampUs = 0;
+static bool rtcSleepFromTimeout = false;
+static uint32_t rtcSleepMagic = 0;
+#endif
+constexpr uint32_t RTC_SLEEP_MAGIC = 0x50494E4C;  // 'PINL'
+
 // How the device is coming back to life, resolved once at boot. Both resume
 // flows suppress the splash and leave the panel holding its pre-boot frame; a
 // plain boot shows the splash. See setup() for the resolution.
@@ -1406,6 +1417,14 @@ void enterDeepSleep(bool fromTimeout) {
     }
   }
 
+#ifndef SIMULATOR
+  rtcSleepTimestampUs = esp_rtc_get_time_us();
+#else
+  rtcSleepTimestampUs = millis() * 1000ULL;
+#endif
+  rtcSleepFromTimeout = fromTimeout;
+  rtcSleepMagic = RTC_SLEEP_MAGIC;
+
   // With Sync on Sleep on, the sleep screen is up and the frame and files the wake needs
   // are written: the device now syncs behind that screen, then comes back to sleep
   // through completeSleepAfterSleepSync().
@@ -1648,7 +1667,24 @@ void setup() {
   const bool isSleepWake = wakeupReason == HalGPIO::WakeupReason::PowerButton;
   LockManager::getInstance().init();
   if (isSleepWake && !isSleepSyncWake && !sleepSyncBoot) {
-    if (LockManager::getInstance().shouldLockOnSleep()) {
+    bool fromTimeout = false;
+    uint32_t elapsedSleepSec = 0;
+    if (rtcSleepMagic == RTC_SLEEP_MAGIC) {
+      rtcSleepMagic = 0;
+      fromTimeout = rtcSleepFromTimeout;
+#ifndef SIMULATOR
+      const uint64_t wakeNowUs = esp_rtc_get_time_us();
+      if (wakeNowUs >= rtcSleepTimestampUs) {
+        elapsedSleepSec = static_cast<uint32_t>((wakeNowUs - rtcSleepTimestampUs) / 1000000ULL);
+      }
+#else
+      const uint64_t wakeNowUs = millis() * 1000ULL;
+      if (wakeNowUs >= rtcSleepTimestampUs) {
+        elapsedSleepSec = static_cast<uint32_t>((wakeNowUs - rtcSleepTimestampUs) / 1000000ULL);
+      }
+#endif
+    }
+    if (LockManager::getInstance().shouldLockOnSleepWake(fromTimeout, elapsedSleepSec)) {
       LockManager::getInstance().lock(LockTrigger::SleepWake);
     }
   } else if (!isSleepWake && !isSleepSyncWake && !sleepSyncBoot && !isSilentReboot) {
