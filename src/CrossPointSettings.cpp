@@ -486,9 +486,9 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   doc["deviceLockEnabled"] = deviceLockEnabled;
   doc["pinHash"] = pinHash;
   doc["pinSalt"] = pinSalt;
-  doc["lockOnSleep"] = lockOnSleep;
   doc["lockOnBoot"] = lockOnBoot;
-  doc["lockOnQuickLock"] = lockOnQuickLock;
+  doc["lockOnSleep"] = lockOnSleep;
+  doc["lockOnLongPress"] = lockOnLongPress;
   doc["pinTimeoutMinutes"] = pinTimeoutMinutes;
   doc["pinLength"] = pinLength;
   doc["userName"] = userName;
@@ -525,9 +525,9 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc, bool importingCrossPoint
       pinSalt[sizeof(pinSalt) - 1] = '\0';
     }
   }
-  lockOnSleep = clamp(doc["lockOnSleep"] | lockOnSleep, 2, 1);
   lockOnBoot = clamp(doc["lockOnBoot"] | lockOnBoot, 2, 1);
-  lockOnQuickLock = clamp(doc["lockOnQuickLock"] | lockOnQuickLock, 2, 1);
+  lockOnSleep = clamp(doc["lockOnSleep"] | lockOnSleep, 2, 0);
+  lockOnLongPress = clamp(doc["lockOnLongPress"] | lockOnLongPress, 2, 1);
   pinTimeoutMinutes = doc["pinTimeoutMinutes"] | pinTimeoutMinutes;
   pinLength = (doc["pinLength"] | pinLength) == 6 ? 6 : 4;
   if (!doc["userName"].isNull()) {

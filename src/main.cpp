@@ -673,13 +673,6 @@ void notifyQuickLockChanged() {
   mappedInputManager.clearInjectedReleases();
   LOG_DBG("MAIN", "Quick Lock %s", locked ? "enabled" : "disabled");
   if (locked) {
-    if (LockManager::getInstance().shouldLockOnQuickLock()) {
-      LockManager::getInstance().lock(LockTrigger::QuickLock);
-      buttonShortcutController.toggleQuickLock(millis(), QuickLockTrigger::None, false);
-      rtcSleepForcePinLock = true;
-      enterDeepSleep(false);
-      return;
-    }
     APP_STATE.quickLockRestoreFrontlight = Frontlight.isOn();
     Frontlight.setOn(false);
     activityManager.notifyInputLockChanged(true);
@@ -726,8 +719,8 @@ bool handleGlobalPowerButtonAction(const CrossPointSettings::SHORT_PWRBTN action
     case CrossPointSettings::SHORT_PWRBTN::SLEEP:
       if (mappedInputManager.getHeldTime() >= SETTINGS.getPowerButtonLongPressDuration() ||
           gpio.getPowerButtonHeldTime() >= SETTINGS.getPowerButtonLongPressDuration()) {
-        if (PinStorage::isLockEnabled()) {
-          LockManager::getInstance().lock(LockTrigger::QuickLock);
+        if (PinStorage::isLockEnabled() && SETTINGS.lockOnLongPress != 0) {
+          LockManager::getInstance().lock(LockTrigger::Manual);
           rtcSleepForcePinLock = true;
         }
       }
@@ -1688,14 +1681,12 @@ void setup() {
   const bool isSleepWake = wakeupReason == HalGPIO::WakeupReason::PowerButton;
   LockManager::getInstance().init();
   if (isSleepWake && !isSleepSyncWake && !sleepSyncBoot) {
-    bool fromTimeout = false;
-    uint32_t elapsedSleepSec = 0;
-    bool forcePinLock = false;
     if (rtcSleepMagic == RTC_SLEEP_MAGIC) {
       rtcSleepMagic = 0;
-      fromTimeout = rtcSleepFromTimeout;
-      forcePinLock = rtcSleepForcePinLock;
+      const bool fromTimeout = rtcSleepFromTimeout;
+      const bool forcePinLock = rtcSleepForcePinLock;
       rtcSleepForcePinLock = false;
+      uint32_t elapsedSleepSec = 0;
 #ifndef SIMULATOR
       const uint64_t wakeNowUs = esp_rtc_get_time_us();
       if (wakeNowUs >= rtcSleepTimestampUs) {
@@ -1707,9 +1698,13 @@ void setup() {
         elapsedSleepSec = static_cast<uint32_t>((wakeNowUs - rtcSleepTimestampUs) / 1000000ULL);
       }
 #endif
-    }
-    if (LockManager::getInstance().shouldLockOnSleepWake(fromTimeout, elapsedSleepSec, forcePinLock)) {
-      LockManager::getInstance().lock(LockTrigger::SleepWake);
+      if (LockManager::getInstance().shouldLockOnSleepWake(fromTimeout, elapsedSleepSec, forcePinLock)) {
+        LockManager::getInstance().lock(LockTrigger::SleepWake);
+      }
+    } else {
+      if (LockManager::getInstance().shouldLockOnBoot()) {
+        LockManager::getInstance().lock(LockTrigger::Boot);
+      }
     }
   } else if (!isSleepWake && !isSleepSyncWake && !sleepSyncBoot && !isSilentReboot) {
     if (LockManager::getInstance().shouldLockOnBoot()) {

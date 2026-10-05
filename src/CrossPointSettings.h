@@ -658,9 +658,9 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t deviceLockEnabled = 0;
   char pinHash[65] = "";
   char pinSalt[17] = "";
-  uint8_t lockOnSleep = 1;
   uint8_t lockOnBoot = 1;
-  uint8_t lockOnQuickLock = 1;
+  uint8_t lockOnSleep = 0;
+  uint8_t lockOnLongPress = 1;
   uint8_t pinTimeoutMinutes = 15;
   uint8_t pinLength = 4;
   char userName[33] = "Usuario";

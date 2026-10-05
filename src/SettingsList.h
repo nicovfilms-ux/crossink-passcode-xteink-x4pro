@@ -829,9 +829,9 @@ inline const std::vector<SettingInfo>& getBaseSettingsList() {
             StrId::STR_PIN_TIMEOUT, &CrossPointSettings::pinTimeoutMinutes,
             {StrId::STR_TIMEOUT_IMMEDIATELY, StrId::STR_TIMEOUT_5_MIN, StrId::STR_TIMEOUT_15_MIN,
              StrId::STR_TIMEOUT_30_MIN, StrId::STR_TIMEOUT_1_HOUR, StrId::STR_TIMEOUT_2_HOURS,
-             StrId::STR_TIMEOUT_4_HOURS},
+             StrId::STR_TIMEOUT_4_HOURS, StrId::STR_NEVER},
             "pinTimeoutMinutes", StrId::STR_SECURITY)
-            .withEnumRawValues({0, 5, 15, 30, 60, 120, 240}));
+            .withEnumRawValues({0, 5, 15, 30, 60, 120, 240, 255}));
     add(SettingInfo::Enum(
             StrId::STR_PIN_LENGTH, &CrossPointSettings::pinLength,
             {StrId::STR_4_DIGITS, StrId::STR_6_DIGITS},
@@ -1442,9 +1442,9 @@ inline std::vector<SettingInfo> buildSecurityDeviceLockSettingsList(const std::v
   addSettingByName(settings, allSettings, StrId::STR_USER_NAME);
   settings.push_back(SettingInfo::Action(StrId::STR_LOCK_NOW, SettingAction::SecurityLockNow));
   addSettingByName(settings, allSettings, StrId::STR_PIN_TIMEOUT);
-  settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_SLEEP, &CrossPointSettings::lockOnSleep));
   settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_BOOT, &CrossPointSettings::lockOnBoot));
-  settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_QUICK_LOCK, &CrossPointSettings::lockOnQuickLock));
+  settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_SLEEP, &CrossPointSettings::lockOnSleep));
+  settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_LONG_PRESS, &CrossPointSettings::lockOnLongPress));
   return settings;
 }
 
