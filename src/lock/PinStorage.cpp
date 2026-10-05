@@ -65,6 +65,7 @@ bool PinStorage::setPin(const char* pin) {
   strncpy(SETTINGS.pinHash, hash, sizeof(SETTINGS.pinHash) - 1);
   SETTINGS.pinHash[sizeof(SETTINGS.pinHash) - 1] = '\0';
 
+  SETTINGS.pinLength = (len == 6) ? 6 : 4;
   SETTINGS.deviceLockEnabled = 1;
   const bool saved = SETTINGS.saveToFile();
   LOG_INF("PIN", "New PIN configured and saved (status: %d)", saved);

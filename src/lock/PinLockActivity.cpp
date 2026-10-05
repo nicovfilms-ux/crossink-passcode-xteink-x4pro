@@ -119,18 +119,14 @@ std::string PinLockActivity::getPromptText() const {
 }
 
 void PinLockActivity::handleKeyPress(const char key) {
+  const size_t dotCount = (SETTINGS.pinLength == 6) ? 6 : 4;
   if (key >= '0' && key <= '9') {
-    if (enteredPin_.size() < PinStorage::MAX_PIN_LEN) {
+    if (enteredPin_.size() < dotCount) {
       enteredPin_.push_back(key);
       renderDotsOnly();
-      if (mode_ == Mode::Unlock && enteredPin_.size() >= PinStorage::MIN_PIN_LEN) {
-        if (PinStorage::verifyPin(enteredPin_.c_str())) {
-          onUnlockSuccess();
-          return;
-        } else if (enteredPin_.size() == PinStorage::MAX_PIN_LEN) {
-          submitCurrentPin();
-          return;
-        }
+      if (enteredPin_.size() == dotCount) {
+        submitCurrentPin();
+        return;
       }
     }
   } else if (key == 'C') {
@@ -149,7 +145,8 @@ void PinLockActivity::handleKeyPress(const char key) {
 }
 
 void PinLockActivity::submitCurrentPin() {
-  if (enteredPin_.size() < PinStorage::MIN_PIN_LEN) {
+  const size_t dotCount = (SETTINGS.pinLength == 6) ? 6 : 4;
+  if (enteredPin_.size() < dotCount) {
     errorMessage_ = tr(STR_INCORRECT_PIN);
     errorUntilMs_ = millis() + 1500;
     enteredPin_.clear();
@@ -309,10 +306,10 @@ void PinLockActivity::renderDotsOnly() {
   RenderLock lock;
   renderer.fillRect(dotsX_ + 12, dotsY_ + 2, dotsW_ - 24, dotsH_ - 4, false);
 
-  constexpr size_t dotCount = 6;
+  const size_t dotCount = (SETTINGS.pinLength == 6) ? 6 : 4;
   constexpr int dotRadius = 7;
-  constexpr int dotSpacing = 28;
-  constexpr int dotsTotalW = (dotCount - 1) * dotSpacing;
+  const int dotSpacing = (dotCount == 6) ? 28 : 36;
+  const int dotsTotalW = static_cast<int>(dotCount - 1) * dotSpacing;
   const int dotsStartX = dotsX_ + (dotsW_ - dotsTotalW) / 2;
   const int dotsCenterY = dotsY_ + dotsH_ / 2;
 
@@ -336,10 +333,10 @@ void PinLockActivity::render(RenderLock&&) {
   const int screenW = renderer.getScreenWidth();
   const int screenH = renderer.getScreenHeight();
 
-  const char* title = "XTEINK X4 PRO";
-  const int titleW = renderer.getTextWidth(UI_12_FONT_ID, title, EpdFontFamily::BOLD);
+  const std::string title = std::string("XTEINK de ") + (SETTINGS.userName[0] != '\0' ? SETTINGS.userName : "Usuario");
+  const int titleW = renderer.getTextWidth(UI_12_FONT_ID, title.c_str(), EpdFontFamily::BOLD);
   const int titleY = (screenH > 600) ? 100 : 25;
-  renderer.drawText(UI_12_FONT_ID, (screenW - titleW) / 2, titleY, title, true, EpdFontFamily::BOLD);
+  renderer.drawText(UI_12_FONT_ID, (screenW - titleW) / 2, titleY, title.c_str(), true, EpdFontFamily::BOLD);
 
   const int iconY = titleY + 35;
   freeink::ui::GfxRendererTarget target(renderer);
@@ -358,10 +355,10 @@ void PinLockActivity::render(RenderLock&&) {
 
   renderer.drawRoundedRect(dotsX_ + 10, dotsY_, dotsW_ - 20, dotsH_, 1, 6, true);
 
-  constexpr size_t dotCount = 6;
+  const size_t dotCount = (SETTINGS.pinLength == 6) ? 6 : 4;
   constexpr int dotRadius = 7;
-  constexpr int dotSpacing = 28;
-  constexpr int dotsTotalW = (dotCount - 1) * dotSpacing;
+  const int dotSpacing = (dotCount == 6) ? 28 : 36;
+  const int dotsTotalW = static_cast<int>(dotCount - 1) * dotSpacing;
   const int dotsStartX = dotsX_ + (dotsW_ - dotsTotalW) / 2;
   const int dotsCenterY = dotsY_ + dotsH_ / 2;
 
@@ -406,6 +403,11 @@ void PinLockActivity::render(RenderLock&&) {
       renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, forgot.c_str(), true, EpdFontFamily::REGULAR);
     }
   }
+
+  const char* osFooter = "Corossink 1.6.0 - Passcode Version";
+  const int osFooterW = renderer.getTextWidth(UI_10_FONT_ID, osFooter, EpdFontFamily::REGULAR);
+  const int osFooterY = (screenH > 600) ? (screenH - 32) : (screenH - 22);
+  renderer.drawText(UI_10_FONT_ID, (screenW - osFooterW) / 2, osFooterY, osFooter, true, EpdFontFamily::REGULAR);
 
   renderer.displayBuffer(HalDisplay::FULL_REFRESH);
   needsFullRepaint_ = false;

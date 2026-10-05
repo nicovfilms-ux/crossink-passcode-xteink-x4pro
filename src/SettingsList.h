@@ -560,7 +560,7 @@ inline SettingInfo buildHomeButtonActionSetting(const StrId nameId, uint8_t Cros
 // #1636) so the per-entry SettingInfo cost is paid once. Read-only consumers
 // can use it directly; mutable device UI lists use getSettingsList(), which
 // returns an owned copy and can add SD-card font and dictionary options.
-inline constexpr size_t BASE_SETTINGS_CAPACITY = 102;  // 100 regular entries plus two optional tilt entries.
+inline constexpr size_t BASE_SETTINGS_CAPACITY = 108;  // 106 regular entries plus two optional tilt entries.
 
 inline const std::vector<SettingInfo>& getBaseSettingsList() {
   static const std::vector<SettingInfo> baseList = [] {
@@ -789,6 +789,8 @@ inline const std::vector<SettingInfo>& getBaseSettingsList() {
     // --- System ---
     add(SettingInfo::String(StrId::STR_DEVICE_NAME, SETTINGS.deviceName, sizeof(SETTINGS.deviceName), "deviceName",
                             StrId::STR_CAT_SYSTEM));
+    add(SettingInfo::String(StrId::STR_USER_NAME, SETTINGS.userName, sizeof(SETTINGS.userName), "userName",
+                            StrId::STR_CAT_SYSTEM));
     add(SettingInfo::Value(
         StrId::STR_TIME_TO_SLEEP, &CrossPointSettings::sleepTimeoutMinutes,
         {CrossPointSettings::MIN_SLEEP_TIMEOUT_MINUTES, CrossPointSettings::MAX_SLEEP_TIMEOUT_MINUTES, 1},
@@ -830,6 +832,11 @@ inline const std::vector<SettingInfo>& getBaseSettingsList() {
              StrId::STR_TIMEOUT_4_HOURS},
             "pinTimeoutMinutes", StrId::STR_SECURITY)
             .withEnumRawValues({0, 5, 15, 30, 60, 120, 240}));
+    add(SettingInfo::Enum(
+            StrId::STR_PIN_LENGTH, &CrossPointSettings::pinLength,
+            {StrId::STR_4_DIGITS, StrId::STR_6_DIGITS},
+            "pinLength", StrId::STR_SECURITY)
+            .withEnumRawValues({4, 6}));
 
     // Frontlight quick-panel state: persisted + web-exposed, category-less so
     // it stays off the Settings screen (edited from the swipe-down panel).
@@ -1427,10 +1434,12 @@ inline std::vector<SettingInfo> buildDisplaySleepSettingsList(const std::vector<
 
 inline std::vector<SettingInfo> buildSecurityDeviceLockSettingsList(const std::vector<SettingInfo>& allSettings) {
   std::vector<SettingInfo> settings;
-  settings.reserve(8);
+  settings.reserve(10);
   settings.push_back(SettingInfo::Toggle(StrId::STR_ENABLE_DEVICE_LOCK, &CrossPointSettings::deviceLockEnabled));
+  addSettingByName(settings, allSettings, StrId::STR_PIN_LENGTH);
   settings.push_back(SettingInfo::Action(StrId::STR_CHANGE_PIN, SettingAction::SecurityChangePin));
   settings.push_back(SettingInfo::Action(StrId::STR_CHANGE_SECURITY_QUESTION, SettingAction::SecurityChangeQuestion));
+  addSettingByName(settings, allSettings, StrId::STR_USER_NAME);
   settings.push_back(SettingInfo::Action(StrId::STR_LOCK_NOW, SettingAction::SecurityLockNow));
   addSettingByName(settings, allSettings, StrId::STR_PIN_TIMEOUT);
   settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_SLEEP, &CrossPointSettings::lockOnSleep));
@@ -1459,8 +1468,9 @@ inline std::vector<SettingInfo> buildSystemSettingsParentList(const std::vector<
 
 inline std::vector<SettingInfo> buildSystemDeviceSettingsList(const std::vector<SettingInfo>& allSettings) {
   std::vector<SettingInfo> settings;
-  settings.reserve(10);
+  settings.reserve(11);
   addSettingByName(settings, allSettings, StrId::STR_DEVICE_NAME);
+  addSettingByName(settings, allSettings, StrId::STR_USER_NAME);
   addSettingByName(settings, allSettings, StrId::STR_TIME_TO_SLEEP);
   addSettingByName(settings, allSettings, StrId::STR_CUSTOM_BOOTSCREEN);
   settings.push_back(SettingInfo::Action(StrId::STR_LANGUAGE, SettingAction::Language));
