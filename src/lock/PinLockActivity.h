@@ -56,7 +56,7 @@ class PinLockActivity final : public Activity {
   bool isFirstRender_ = true;
 
   struct KeyRect {
-    char key;  // '0'-'9', 'C' (Clear), 'E' (Enter), 'X' (Cancel)
+    char key;  // '0'-'9', 'B' (Backspace), 'X' (Cancel), 'F' (Forgot)
     int x;
     int y;
     int w;

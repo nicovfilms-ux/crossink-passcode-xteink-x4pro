@@ -11,6 +11,7 @@
 #include "activities/ActivityManager.h"
 #include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
+#include "components/icons/keyboardIcons.h"
 #include "components/icons/tablerFilledIcons.h"
 #include "fontIds.h"
 
@@ -62,13 +63,15 @@ void PinLockActivity::setupLayout() {
       {'1', '2', '3'},
       {'4', '5', '6'},
       {'7', '8', '9'},
-      {'C', '0', 'E'}
+      {' ', '0', 'B'}
   };
 
   for (int r = 0; r < 4; ++r) {
     for (int c = 0; c < 3; ++c) {
+      const char k = keyMap[r][c];
+      if (k == ' ') continue;
       keys_.push_back({
-          keyMap[r][c],
+          k,
           startX + c * (keyW + gapX),
           startY + r * (keyH + gapY),
           keyW,
@@ -130,13 +133,11 @@ void PinLockActivity::handleKeyPress(const char key) {
         return;
       }
     }
-  } else if (key == 'C') {
+  } else if (key == 'B' || key == 'C') {
     if (!enteredPin_.empty()) {
       enteredPin_.pop_back();
       renderDotsOnly();
     }
-  } else if (key == 'E') {
-    submitCurrentPin();
   } else if (key == 'X') {
     result.isCancelled = true;
     activityManager.popActivity();
@@ -388,16 +389,13 @@ void PinLockActivity::render(RenderLock&&) {
       const int lw = renderer.getTextWidth(UI_12_FONT_ID, label, EpdFontFamily::BOLD);
       const int lh = renderer.getLineHeight(UI_12_FONT_ID);
       renderer.drawText(UI_12_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, label, true, EpdFontFamily::BOLD);
-    } else if (k.key == 'C') {
-      const char* clr = "CLEAR";
-      const int lw = renderer.getTextWidth(UI_10_FONT_ID, clr, EpdFontFamily::BOLD);
-      const int lh = renderer.getLineHeight(UI_10_FONT_ID);
-      renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, clr, true, EpdFontFamily::BOLD);
-    } else if (k.key == 'E') {
-      const char* ok = "OK";
-      const int lw = renderer.getTextWidth(UI_10_FONT_ID, ok, EpdFontFamily::BOLD);
-      const int lh = renderer.getLineHeight(UI_10_FONT_ID);
-      renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, ok, true, EpdFontFamily::BOLD);
+    } else if (k.key == 'B' || k.key == 'C') {
+      target.bitmap(freeink::ui::Rect{static_cast<int16_t>(k.x + (k.w - icon_backspace_28.w) / 2),
+                                      static_cast<int16_t>(k.y + (k.h - icon_backspace_28.h) / 2),
+                                      static_cast<int16_t>(icon_backspace_28.w),
+                                      static_cast<int16_t>(icon_backspace_28.h)},
+                    freeink::ui::bitmapFromIcon(icon_backspace_28), freeink::ui::BitmapMode::Center,
+                    freeink::ui::Paint::solid(freeink::ui::Color::Black));
     } else if (k.key == 'X') {
       const char* cancel = "CANCEL";
       const int lw = renderer.getTextWidth(UI_10_FONT_ID, cancel, EpdFontFamily::BOLD);
@@ -441,11 +439,14 @@ void PinLockActivity::loop() {
 
   if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
     if (!enteredPin_.empty()) {
-      handleKeyPress('C');
+      handleKeyPress('B');
     } else if (mode_ != Mode::Unlock) {
       handleKeyPress('X');
     }
   } else if (mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
-    handleKeyPress('E');
+    const size_t dotCount = (SETTINGS.pinLength == 6) ? 6 : 4;
+    if (enteredPin_.size() == dotCount) {
+      submitCurrentPin();
+    }
   }
 }

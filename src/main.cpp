@@ -735,6 +735,12 @@ bool handleGlobalPowerButtonAction(const CrossPointSettings::SHORT_PWRBTN action
       return true;
     }
     case CrossPointSettings::SHORT_PWRBTN::QUICK_LOCK:
+      if (PinStorage::isLockEnabled()) {
+        LockManager::getInstance().lock(LockTrigger::Manual);
+        rtcSleepForcePinLock = true;
+        enterDeepSleep();
+        return true;
+      }
       if (quickLockTrigger == QuickLockTrigger::None) {
         LOG_ERR("MAIN", "Quick Lock requested without an input trigger");
         return false;
