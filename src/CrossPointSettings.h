@@ -494,7 +494,7 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t twoFingerSwipeLeft = TWO_FINGER_SWIPE_NOT_SET;
   uint8_t twoFingerSwipeRight = TWO_FINGER_SWIPE_NOT_SET;
   // Short power button action behaviour
-  uint8_t shortPwrBtn = IGNORE;
+  uint8_t shortPwrBtn = SLEEP;
   // Long power button action behaviour
   uint8_t longPwrBtn = SLEEP;
   // Power + Up shortcut action. Disabled by default so the established
@@ -667,12 +667,14 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t securityQuestion = 0;
   char securityAnswerHash[65] = "";
   char securityAnswerSalt[17] = "";
+  char contactName[33] = "";
+  char contactPhone[33] = "";
 
   ~CrossPointSettings() = default;
 
   static constexpr uint16_t POWER_BUTTON_WAKE_SHORT_MS = 10;
   static constexpr uint16_t POWER_BUTTON_WAKE_LONG_MS = 200;
-  static constexpr uint16_t POWER_BUTTON_LONG_PRESS_MS = 400;
+  static constexpr uint16_t POWER_BUTTON_LONG_PRESS_MS = 220;
   static constexpr uint8_t MIN_SLEEP_TIMEOUT_MINUTES = 1;
   static constexpr uint8_t SLEEP_TIMEOUT_NEVER_MINUTES = 31;
   static constexpr uint8_t MAX_SLEEP_TIMEOUT_MINUTES = SLEEP_TIMEOUT_NEVER_MINUTES;

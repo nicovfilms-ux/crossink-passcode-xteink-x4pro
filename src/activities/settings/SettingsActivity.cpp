@@ -330,6 +330,7 @@ void SettingsActivity::rebuildSettingsLists() {
   systemReadingStatsSettings = buildSystemReadingStatsSettingsList(allSettings);
   systemGlobalStatsSettings = buildSystemGlobalStatsSettingsList(allSettings);
   securityDeviceLockSettings = buildSecurityDeviceLockSettingsList(allSettings);
+  securityLostAndFoundSettings = buildSecurityLostAndFoundSettingsList(allSettings);
   controlsSettings = buildControlsSettingsParentList(allSettings);
   controlsPowerSettings = buildControlsPowerSettingsList(allSettings);
   controlsHomeButtonSettings = buildControlsHomeButtonSettingsList(allSettings);
@@ -451,6 +452,9 @@ void SettingsActivity::setCurrentSettingsForCategory() {
         case SettingAction::SecurityDeviceLock:
           currentSettings = &securityDeviceLockSettings;
           break;
+        case SettingAction::SecurityLostAndFound:
+          currentSettings = &securityLostAndFoundSettings;
+          break;
         default:
           currentSettings = &systemSettings;
           break;
@@ -502,6 +506,8 @@ StrId SettingsActivity::activeSubmenuTitleId() const {
       return StrId::STR_ALL_TIME_STATS;
     case SettingAction::SecurityDeviceLock:
       return StrId::STR_DEVICE_LOCK;
+    case SettingAction::SecurityLostAndFound:
+      return StrId::STR_LOST_AND_FOUND;
     default:
       return StrId::STR_NONE_OPT;
   }
@@ -698,10 +704,24 @@ void SettingsActivity::openStringEditor(const SettingInfo& setting) {
   }
 
   const size_t maxLength = setting.stringMaxLen > 0 ? setting.stringMaxLen - 1 : 0;
-  const size_t minLength = setting.nameId == StrId::STR_DEVICE_NAME ? CrossPointSettings::MIN_DEVICE_NAME_LENGTH : 0;
+  size_t minLength = 0;
+  std::string fixedPrefix = "";
+  if (setting.nameId == StrId::STR_DEVICE_NAME) {
+    minLength = CrossPointSettings::MIN_DEVICE_NAME_LENGTH;
+  } else if (setting.nameId == StrId::STR_CONTACT_PHONE) {
+    fixedPrefix = "+";
+    minLength = 2;  // '+' plus at least 1 digit
+    if (initialText.empty()) {
+      initialText = "+";
+    } else if (initialText.front() != '+') {
+      initialText = "+" + initialText;
+    }
+  }
+
   const SettingInfo selectedSetting = setting;
   startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, I18N.get(setting.nameId),
-                                                                 initialText, maxLength, InputType::Text, minLength),
+                                                                 initialText, maxLength, InputType::Text, minLength,
+                                                                 fixedPrefix),
                          [this, selectedSetting](const ActivityResult& result) {
                            if (result.isCancelled) {
                              requestUpdate();
@@ -714,12 +734,20 @@ void SettingsActivity::openStringEditor(const SettingInfo& setting) {
                              return;
                            }
 
-                           const std::string value = trimAsciiSpaces(kb->text);
+                           std::string value = trimAsciiSpaces(kb->text);
                            if (selectedSetting.nameId == StrId::STR_DEVICE_NAME &&
                                (value.length() < CrossPointSettings::MIN_DEVICE_NAME_LENGTH ||
                                 value.length() > CrossPointSettings::MAX_DEVICE_NAME_LENGTH)) {
                              requestUpdate();
                              return;
+                           }
+
+                           if (selectedSetting.nameId == StrId::STR_CONTACT_PHONE) {
+                             if (value == "+" || value.empty()) {
+                               value.clear();  // If user only left '+', treat as empty
+                             } else if (value.front() != '+') {
+                               value = "+" + value;
+                             }
                            }
 
                            if (selectedSetting.stringSetter) {
@@ -1241,6 +1269,7 @@ void SettingsActivity::toggleCurrentSetting() {
         activityManager.pushActivity(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::Unlock));
         break;
       case SettingAction::SecurityDeviceLock:
+      case SettingAction::SecurityLostAndFound:
       case SettingAction::ReaderFontOptions:
       case SettingAction::ReaderPageLayout:
       case SettingAction::ControlsPowerButton:

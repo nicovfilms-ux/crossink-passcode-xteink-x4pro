@@ -52,6 +52,7 @@ enum class SettingAction {
   DownloadFonts,
   ClockSync,
   SecurityDeviceLock,
+  SecurityLostAndFound,
   SecurityChangePin,
   SecurityLockNow,
   SecurityChangeQuestion,
@@ -258,6 +259,7 @@ class SettingsActivity final : public Activity {
   std::vector<SettingInfo> systemReadingStatsSettings;
   std::vector<SettingInfo> systemGlobalStatsSettings;
   std::vector<SettingInfo> securityDeviceLockSettings;
+  std::vector<SettingInfo> securityLostAndFoundSettings;
   const std::vector<SettingInfo>* currentSettings = nullptr;
 
   bool preserveQuickResumeTimeoutOn = false;

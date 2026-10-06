@@ -14,6 +14,7 @@
 #include "components/icons/keyboardIcons.h"
 #include "components/icons/tablerFilledIcons.h"
 #include "fontIds.h"
+#include "lock/LostAndFoundActivity.h"
 
 PinLockActivity::PinLockActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
                                  const Mode mode, const ResumeTarget resumeTarget,
@@ -31,7 +32,6 @@ void PinLockActivity::onEnter() {
   errorMessage_.clear();
   errorUntilMs_ = 0;
   needsFullRepaint_ = true;
-  isFirstRender_ = true;
   requestUpdate();
 }
 
@@ -63,7 +63,7 @@ void PinLockActivity::setupLayout() {
       {'1', '2', '3'},
       {'4', '5', '6'},
       {'7', '8', '9'},
-      {'B', '0', ' '}
+      {'B', '0', (mode_ == Mode::Unlock ? 'I' : ' ')}
   };
 
   for (int r = 0; r < 4; ++r) {
@@ -143,6 +143,8 @@ void PinLockActivity::handleKeyPress(const char key) {
     activityManager.popActivity();
   } else if (key == 'F') {
     onForgotPin();
+  } else if (key == 'I') {
+    activityManager.pushActivity(std::make_unique<LostAndFoundActivity>(renderer, mappedInput));
   }
 }
 
@@ -330,18 +332,13 @@ void PinLockActivity::renderDotsOnly() {
 void PinLockActivity::render(RenderLock&&) {
   setupLayout();
 
-  if (isFirstRender_) {
-    isFirstRender_ = false;
-    renderer.clearScreen();
-    renderer.displayBuffer(HalDisplay::FULL_REFRESH);
-  }
-
   renderer.clearScreen();
 
   const int screenW = renderer.getScreenWidth();
   const int screenH = renderer.getScreenHeight();
 
-  const std::string title = std::string("XTEINK de ") + (SETTINGS.userName[0] != '\0' ? SETTINGS.userName : "Usuario");
+  const std::string userName = SETTINGS.userName[0] != '\0' ? SETTINGS.userName : "";
+  const std::string title = !userName.empty() ? (userName + " - XTEINK") : "XTEINK";
   const int titleW = renderer.getTextWidth(UI_12_FONT_ID, title.c_str(), EpdFontFamily::BOLD);
   const int titleY = (screenH > 600) ? 100 : 25;
   renderer.drawText(UI_12_FONT_ID, (screenW - titleW) / 2, titleY, title.c_str(), true, EpdFontFamily::BOLD);
@@ -397,15 +394,22 @@ void PinLockActivity::render(RenderLock&&) {
                     freeink::ui::bitmapFromIcon(icon_backspace_28), freeink::ui::BitmapMode::Center,
                     freeink::ui::Paint::solid(freeink::ui::Color::Black));
     } else if (k.key == 'X') {
-      const char* cancel = "CANCEL";
-      const int lw = renderer.getTextWidth(UI_10_FONT_ID, cancel, EpdFontFamily::BOLD);
+      const std::string cancel = tr(STR_CANCEL);
+      const int lw = renderer.getTextWidth(UI_10_FONT_ID, cancel.c_str(), EpdFontFamily::BOLD);
       const int lh = renderer.getLineHeight(UI_10_FONT_ID);
-      renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, cancel, true, EpdFontFamily::BOLD);
+      renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, cancel.c_str(), true, EpdFontFamily::BOLD);
     } else if (k.key == 'F') {
       const std::string forgot = tr(STR_FORGOT_PIN);
       const int lw = renderer.getTextWidth(UI_10_FONT_ID, forgot.c_str(), EpdFontFamily::REGULAR);
       const int lh = renderer.getLineHeight(UI_10_FONT_ID);
       renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, forgot.c_str(), true, EpdFontFamily::REGULAR);
+    } else if (k.key == 'I') {
+      target.bitmap(freeink::ui::Rect{static_cast<int16_t>(k.x + (k.w - icon_info_28.w) / 2),
+                                      static_cast<int16_t>(k.y + (k.h - icon_info_28.h) / 2),
+                                      static_cast<int16_t>(icon_info_28.w),
+                                      static_cast<int16_t>(icon_info_28.h)},
+                    freeink::ui::bitmapFromIcon(icon_info_28), freeink::ui::BitmapMode::Center,
+                    freeink::ui::Paint::solid(freeink::ui::Color::Black));
     }
   }
 

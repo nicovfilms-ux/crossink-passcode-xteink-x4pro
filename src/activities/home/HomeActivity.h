@@ -25,7 +25,7 @@ class HomeActivity final : public Activity {
   // through the SD snapshot cache and are paged in on demand.
   static constexpr int kCarouselFrameCount = 1;
   // Must be >= LyraCarouselMetrics::values.homeRecentBooksCount (asserted in .cpp)
-  static constexpr int kMaxCachedBooks = 3;
+  static constexpr int kMaxCachedBooks = 6;
 
  private:
   ButtonNavigator buttonNavigator;

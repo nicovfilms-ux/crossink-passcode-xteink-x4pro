@@ -53,7 +53,6 @@ class PinLockActivity final : public Activity {
   std::string errorMessage_;
   uint32_t errorUntilMs_ = 0;
   bool needsFullRepaint_ = true;
-  bool isFirstRender_ = true;
 
   struct KeyRect {
     char key;  // '0'-'9', 'B' (Backspace), 'X' (Cancel), 'F' (Forgot)

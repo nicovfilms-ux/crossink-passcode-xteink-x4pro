@@ -9,9 +9,9 @@ class GfxRenderer;
 namespace Lyra3CoversMetrics {
 constexpr ThemeMetrics values = [] {
   ThemeMetrics v = LyraMetrics::values;
-  v.menuRowHeight = 46;
-  v.homeCoverTileHeight = 300;
-  v.homeRecentBooksCount = 3;
+  v.menuRowHeight = 42;
+  v.homeCoverTileHeight = 405;
+  v.homeRecentBooksCount = 6;
   v.keyboardKeyHeight = 56;
   v.keyboardCenteredText = true;
   return v;

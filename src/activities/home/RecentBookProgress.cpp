@@ -262,6 +262,27 @@ void RecentBookProgress::saveCachedEpubPercent(const Epub& epub, const int spine
 
 bool RecentBookProgress::hasPercent(const float progress) { return progress >= 0.0f; }
 
+std::string RecentBookProgress::getCachePath(const RecentBook& book) {
+  if (FsHelpers::hasEpubExtension(book.path)) {
+    return Epub::cachePathForFilePath(book.path, "/.crosspoint");
+  }
+  if (FsHelpers::hasXtcExtension(book.path)) {
+    return "/.crosspoint/xtc_" + std::to_string(std::hash<std::string>{}(book.path));
+  }
+  if (FsHelpers::hasTxtExtension(book.path) || FsHelpers::hasMarkdownExtension(book.path)) {
+    return "/.crosspoint/txt_" + std::to_string(std::hash<std::string>{}(book.path));
+  }
+  return "";
+}
+
+BookReadingStats RecentBookProgress::loadStats(const RecentBook& book) {
+  if (!FsHelpers::hasEpubExtension(book.path) && !FsHelpers::hasXtcExtension(book.path)) {
+    return BookReadingStats{};
+  }
+  const std::string cachePath = getCachePath(book);
+  return BookReadingStats::load(cachePath);
+}
+
 std::string RecentBookProgress::formatPercent(const float progress) {
   if (!hasPercent(progress)) {
     return "";

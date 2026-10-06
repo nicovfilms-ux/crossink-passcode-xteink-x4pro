@@ -495,6 +495,8 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   doc["securityQuestion"] = securityQuestion;
   doc["securityAnswerHash"] = securityAnswerHash;
   doc["securityAnswerSalt"] = securityAnswerSalt;
+  doc["contactName"] = contactName;
+  doc["contactPhone"] = contactPhone;
 }
 
 bool CrossPointSettings::fromJson(JsonVariantConst doc, bool importingCrossPoint) {

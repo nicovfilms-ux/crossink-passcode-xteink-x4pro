@@ -6,3 +6,4 @@
 # The source icon is named "delete" by Lucide, but it represents a backspace
 # key in this UI.
 backspace = delete
+info = info

@@ -560,7 +560,7 @@ inline SettingInfo buildHomeButtonActionSetting(const StrId nameId, uint8_t Cros
 // #1636) so the per-entry SettingInfo cost is paid once. Read-only consumers
 // can use it directly; mutable device UI lists use getSettingsList(), which
 // returns an owned copy and can add SD-card font and dictionary options.
-inline constexpr size_t BASE_SETTINGS_CAPACITY = 108;  // 106 regular entries plus two optional tilt entries.
+inline constexpr size_t BASE_SETTINGS_CAPACITY = 110;  // 108 regular entries plus two optional tilt entries.
 
 inline const std::vector<SettingInfo>& getBaseSettingsList() {
   static const std::vector<SettingInfo> baseList = [] {
@@ -837,6 +837,10 @@ inline const std::vector<SettingInfo>& getBaseSettingsList() {
             {StrId::STR_4_DIGITS, StrId::STR_6_DIGITS},
             "pinLength", StrId::STR_SECURITY)
             .withEnumRawValues({4, 6}));
+    add(SettingInfo::String(StrId::STR_CONTACT_NAME, SETTINGS.contactName, sizeof(SETTINGS.contactName),
+                            "contactName", StrId::STR_SECURITY));
+    add(SettingInfo::String(StrId::STR_CONTACT_PHONE, SETTINGS.contactPhone, sizeof(SETTINGS.contactPhone),
+                            "contactPhone", StrId::STR_SECURITY));
 
     // Frontlight quick-panel state: persisted + web-exposed, category-less so
     // it stays off the Settings screen (edited from the swipe-down panel).
@@ -1436,15 +1440,23 @@ inline std::vector<SettingInfo> buildSecurityDeviceLockSettingsList(const std::v
   std::vector<SettingInfo> settings;
   settings.reserve(10);
   settings.push_back(SettingInfo::Toggle(StrId::STR_ENABLE_DEVICE_LOCK, &CrossPointSettings::deviceLockEnabled));
+  settings.push_back(SettingInfo::Submenu(StrId::STR_LOST_AND_FOUND, SettingAction::SecurityLostAndFound));
   addSettingByName(settings, allSettings, StrId::STR_PIN_LENGTH);
   settings.push_back(SettingInfo::Action(StrId::STR_CHANGE_PIN, SettingAction::SecurityChangePin));
   settings.push_back(SettingInfo::Action(StrId::STR_CHANGE_SECURITY_QUESTION, SettingAction::SecurityChangeQuestion));
   addSettingByName(settings, allSettings, StrId::STR_USER_NAME);
-  settings.push_back(SettingInfo::Action(StrId::STR_LOCK_NOW, SettingAction::SecurityLockNow));
   addSettingByName(settings, allSettings, StrId::STR_PIN_TIMEOUT);
   settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_BOOT, &CrossPointSettings::lockOnBoot));
   settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_SLEEP, &CrossPointSettings::lockOnSleep));
   settings.push_back(SettingInfo::Toggle(StrId::STR_LOCK_ON_LONG_PRESS, &CrossPointSettings::lockOnLongPress));
+  return settings;
+}
+
+inline std::vector<SettingInfo> buildSecurityLostAndFoundSettingsList(const std::vector<SettingInfo>& allSettings) {
+  std::vector<SettingInfo> settings;
+  settings.reserve(2);
+  addSettingByName(settings, allSettings, StrId::STR_CONTACT_NAME);
+  addSettingByName(settings, allSettings, StrId::STR_CONTACT_PHONE);
   return settings;
 }
 

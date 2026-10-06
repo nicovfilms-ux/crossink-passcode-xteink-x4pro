@@ -168,25 +168,11 @@ void appendHashedFileStateToKey(std::string& key, const std::string& path) {
 }
 
 std::string getRecentBookCachePath(const RecentBook& book) {
-  if (FsHelpers::hasEpubExtension(book.path)) {
-    return Epub::cachePathForFilePath(book.path, "/.crosspoint");
-  }
-  if (FsHelpers::hasXtcExtension(book.path)) {
-    return "/.crosspoint/xtc_" + std::to_string(std::hash<std::string>{}(book.path));
-  }
-  if (FsHelpers::hasTxtExtension(book.path) || FsHelpers::hasMarkdownExtension(book.path)) {
-    return "/.crosspoint/txt_" + std::to_string(std::hash<std::string>{}(book.path));
-  }
-  return "";
+  return RecentBookProgress::getCachePath(book);
 }
 
 BookReadingStats loadRecentBookStats(const RecentBook& book) {
-  if (!FsHelpers::hasEpubExtension(book.path) && !FsHelpers::hasXtcExtension(book.path)) {
-    return BookReadingStats{};
-  }
-
-  const std::string cachePath = getRecentBookCachePath(book);
-  return BookReadingStats::load(cachePath);
+  return RecentBookProgress::loadStats(book);
 }
 
 bool loadEpubHighlightedContext(const RecentBook& book, const bool loadProgress, const bool loadChapterTitle,
@@ -926,8 +912,9 @@ void HomeActivity::onEnter() {
 
   globalStats = GlobalReadingStats::load();
   showAllDevicesStats = GlobalReadingStats::hasSyncedStats();
-  allDevicesGlobalStats = showAllDevicesStats ? GlobalReadingStats::loadAggregated(globalStats) : globalStats;
-  if (isCarouselTheme) {
+  const bool isLyra3CoversTheme =
+      static_cast<CrossPointSettings::UI_THEME>(SETTINGS.uiTheme) == CrossPointSettings::UI_THEME::LYRA_3_COVERS;
+  if (isCarouselTheme || isLyra3CoversTheme) {
     loadAllBookStats();
   }
   updateHighlightedBookContext(false);
@@ -2109,6 +2096,37 @@ void HomeActivity::loop() {
       }
     }
 
+    const bool isLyra3Covers = uiTheme == CrossPointSettings::UI_THEME::LYRA_3_COVERS;
+    if (isLyra3Covers && visibleBookCount > 0) {
+      if (mappedInput.wasPressed(MappedInputManager::Button::Right)) {
+        if (selectorIndex < visibleBookCount - 1) {
+          selectorIndex++;
+          requestUpdate();
+        }
+      } else if (mappedInput.wasPressed(MappedInputManager::Button::Left)) {
+        if (selectorIndex > 0 && selectorIndex < visibleBookCount) {
+          selectorIndex--;
+          requestUpdate();
+        }
+      } else if (mappedInput.wasPressed(MappedInputManager::Button::Down)) {
+        if (selectorIndex < 3 && selectorIndex + 3 < visibleBookCount) {
+          selectorIndex += 3;
+          requestUpdate();
+        } else if (selectorIndex < visibleBookCount) {
+          selectorIndex = visibleBookCount;
+          requestUpdate();
+        }
+      } else if (mappedInput.wasPressed(MappedInputManager::Button::Up)) {
+        if (selectorIndex >= 3 && selectorIndex < visibleBookCount) {
+          selectorIndex -= 3;
+          requestUpdate();
+        } else if (selectorIndex == visibleBookCount) {
+          selectorIndex = std::min(visibleBookCount - 1, 3);
+          requestUpdate();
+        }
+      }
+    }
+
     const int menuCount = getMenuItemCount();
     buttonNavigator.onNext([this, menuCount] {
       selectorIndex = ButtonNavigator::nextIndex(selectorIndex, menuCount);
@@ -2309,6 +2327,17 @@ void HomeActivity::render(RenderLock&&) {
     const int maxCoverHeight = pageHeight - metrics.buttonHintsHeight - metrics.homeTopPadding -
                                metrics.homeMenuTopOffset - requiredMenuHeight;
     homeCoverTileHeight = std::clamp(maxCoverHeight, 0, metrics.homeCoverTileHeight);
+  } else if (static_cast<CrossPointSettings::UI_THEME>(SETTINGS.uiTheme) == CrossPointSettings::UI_THEME::LYRA_3_COVERS) {
+    const int visibleBooks = getVisibleRecentBookCount();
+    if (visibleBooks <= 0) {
+      homeCoverTileHeight = 180;
+    } else if (visibleBooks <= 2) {
+      homeCoverTileHeight = 260;
+    } else if (visibleBooks == 3) {
+      homeCoverTileHeight = 205;
+    } else {
+      homeCoverTileHeight = 405;
+    }
   }
 
   GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.homeTopPadding},

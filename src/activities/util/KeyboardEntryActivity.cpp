@@ -118,6 +118,11 @@ const fui::KeyboardLayout URL_SNIPPET_LAYOUT{URL_SNIP_ROWS, 4};
 
 void KeyboardEntryActivity::onEnter() {
   Activity::onEnter();
+  if (!fixedPrefix.empty()) {
+    if (text.rfind(fixedPrefix, 0) != 0) {
+      text = fixedPrefix + text;
+    }
+  }
   cursorPos = text.length();
   layoutId = inputType == InputType::Url ? fui::KeyboardLayoutId::QwertyEn : keyboard_layouts::startingLayout();
   const uint16_t enabledLayouts = keyboard_layouts::enabled();
@@ -240,6 +245,9 @@ void KeyboardEntryActivity::insertUtf8(const char* out) {
   if (!out || !*out) return;
   const size_t n = strlen(out);
   if (maxLength != 0 && text.length() + n > maxLength) return;
+  if (!fixedPrefix.empty() && cursorPos < fixedPrefix.length()) {
+    cursorPos = fixedPrefix.length();
+  }
   if (cursorPos > text.length()) cursorPos = text.length();
   text.insert(cursorPos, out, n);
   cursorPos += n;
@@ -247,7 +255,9 @@ void KeyboardEntryActivity::insertUtf8(const char* out) {
 
 bool KeyboardEntryActivity::backspaceUtf8() {
   if (text.empty() || cursorPos == 0) return false;
+  if (!fixedPrefix.empty() && cursorPos <= fixedPrefix.length()) return false;
   const size_t prev = utf8Prev(text, cursorPos);
+  if (!fixedPrefix.empty() && prev < fixedPrefix.length()) return false;
   text.erase(prev, cursorPos - prev);
   cursorPos = prev;
   return true;
@@ -297,8 +307,13 @@ bool KeyboardEntryActivity::activateValue(const int16_t value, const bool longPr
       return false;
     case fui::QWERTY_KEY_BACKSPACE:
       if (longPress) {
-        text.clear();
-        cursorPos = 0;
+        if (!fixedPrefix.empty()) {
+          text = fixedPrefix;
+          cursorPos = fixedPrefix.length();
+        } else {
+          text.clear();
+          cursorPos = 0;
+        }
         return true;
       }
       delPressCount++;
@@ -330,8 +345,13 @@ bool KeyboardEntryActivity::clearAllOrAltOnSelected() {
   const fui::KeyboardKey* key = selectedKey();
   if (!key) return false;
   if (key->value == fui::QWERTY_KEY_BACKSPACE) {
-    text.clear();
-    cursorPos = 0;
+    if (!fixedPrefix.empty()) {
+      text = fixedPrefix;
+      cursorPos = fixedPrefix.length();
+    } else {
+      text.clear();
+      cursorPos = 0;
+    }
     return true;
   }
   // Explicit alts and the letter case-flip, same as touch long-press.
@@ -556,6 +576,9 @@ void KeyboardEntryActivity::loop() {
       while (cursorPos > 0 && cursorPos < text.length() && (static_cast<uint8_t>(text[cursorPos]) & 0xC0) == 0x80) {
         cursorPos--;
       }
+      if (!fixedPrefix.empty() && cursorPos < fixedPrefix.length()) {
+        cursorPos = fixedPrefix.length();
+      }
       touchRouter.reset();
       requestUpdate();
       return;
@@ -650,8 +673,11 @@ void KeyboardEntryActivity::loop() {
         togglePos = false;
         requestUpdate();
       } else if (cursorPos > 0) {
-        cursorPos = utf8Prev(text, cursorPos);
-        requestUpdate();
+        const size_t prev = utf8Prev(text, cursorPos);
+        if (fixedPrefix.empty() || prev >= fixedPrefix.length()) {
+          cursorPos = prev;
+          requestUpdate();
+        }
       }
     }
   }

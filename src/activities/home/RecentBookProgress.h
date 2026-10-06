@@ -4,6 +4,7 @@
 
 class Epub;
 struct RecentBook;
+#include "activities/reader/BookReadingStats.h"
 
 // Helpers for loading and displaying recent-book reading progress.
 // Progress values are percentages in the 0-100 range; negative means unknown.
@@ -12,6 +13,10 @@ struct RecentBook;
 //   const float progress = RecentBookProgress::loadPercent(book);
 //   const std::string label = RecentBookProgress::formatPercent(progress);
 namespace RecentBookProgress {
+// Returns the cache directory path for a recent book.
+std::string getCachePath(const RecentBook& book);
+// Loads the saved reading statistics for a recent book.
+BookReadingStats loadStats(const RecentBook& book);
 // Loads the saved reading percentage for a recent EPUB, XTC, TXT, or Markdown book.
 // Returns -1.0f when progress is unavailable or the cache cannot be read.
 float loadPercent(const RecentBook& book);

@@ -955,7 +955,7 @@ bool dispatchButtonShortcut(const ButtonShortcutController::Result& result) {
 }
 
 namespace {
-constexpr uint16_t POST_SLEEP_SCREEN_SETTLE_MS = 500;
+constexpr uint16_t POST_SLEEP_SCREEN_SETTLE_MS = 20;
 constexpr uint8_t TILT_SLEEP_MAX_ATTEMPTS = 3;
 constexpr uint16_t TILT_SLEEP_RETRY_DELAY_MS = 10;
 
@@ -1995,7 +1995,7 @@ void setup() {
     gpio.update();
   }
 
-  allowSleepAt = millis() + 2000;
+  allowSleepAt = millis() + 200;
 }
 
 void loop() {
