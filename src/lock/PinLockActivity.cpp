@@ -413,7 +413,7 @@ void PinLockActivity::render(RenderLock&&) {
     }
   }
 
-  const char* osFooter = "Corossink 1.6.0 - Passcode Version";
+  const char* osFooter = "CrossInk Passcode 1.0";
   const int osFooterW = renderer.getTextWidth(UI_10_FONT_ID, osFooter, EpdFontFamily::REGULAR);
   const int osFooterY = (screenH > 600) ? (screenH - 32) : (screenH - 22);
   renderer.drawText(UI_10_FONT_ID, (screenW - osFooterW) / 2, osFooterY, osFooter, true, EpdFontFamily::REGULAR);
