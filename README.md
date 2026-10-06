@@ -65,20 +65,52 @@ Esta edición resuelve la ausencia de privacidad en los lectores electrónicos p
 
 ## 🚀 Instalación en Xteink X4 Pro
 
-### Opción 1: Mediante Herramienta Web (Recomendado)
-1. Conecta tu Xteink X4 Pro a la computadora vía USB-C en modo flasheo.
-2. Abre la herramienta web de flasheo ESP32 / CrossPoint Web Flasher ([crosspointreader.com](https://crosspointreader.com/#flash-tools) o [ESP Web Flasher](https://espressif.github.io/esptool-js/)).
-3. Selecciona el archivo binario: **[`releases/crossink-passcode-1.0.bin`](./releases/crossink-passcode-1.0.bin)**.
-4. Flashea en la dirección de memoria de aplicación estándar (`0x10000` según el esquema de partición).
+### ⭐ Método Recomendado: Actualización desde Tarjeta SD (SD Card Firmware Update)
 
-### Opción 2: Mediante esptool (Línea de Comandos)
+Si tu dispositivo ya tiene instalado **CrossInk** o **CrossPoint**, este es el método más rápido, seguro y limpio:
+
+1. Descarga el archivo de release **[`releases/crossink-passcode-1.0.bin`](./releases/crossink-passcode-1.0.bin)** (o desde la sección [Releases de GitHub](https://github.com/nicovfilms-ux/crossink-passcode-xteink-x4pro/releases)).
+2. Conecta la tarjeta MicroSD a tu PC (o usa el modo `Home → File Transfer → USB Drive` en el X4 Pro) y copia el archivo `crossink-passcode-1.0.bin` en cualquier lugar de la tarjeta SD (por ejemplo, en la raíz o en una carpeta de descargas).
+3. En tu lector, ve a **Settings → System → SD Card Firmware Update** (o *Ajustes → Sistema → Actualizar Firmware desde SD*).
+4. Navega hasta el archivo `.bin`, selecciónalo y confirma la actualización. El dispositivo validará la imagen, la grabará en la partición OTA correspondiente y se reiniciará con **CrossInk Passcode 1.0**.
+
+---
+
+### ⚠️ ¿Dispositivo de fábrica con Firmware Chino o Puerto USB bloqueado? (Flujo Unlocker / Escape Hatch)
+
+Muchos dispositivos Xteink X4 Pro comprados a distribuidores de AliExpress vienen de fábrica con el firmware de stock chino o con el puerto USB bloqueado para flasheo directo, impidiendo instalar firmwares de la comunidad mediante el navegador web o cable USB común.
+
+Si este es tu caso, sigue este procedimiento probado de desbloqueo:
+
+#### Paso 1: Desbloqueo inicial (Web Unlocker o Escape Hatch)
+- **Opción A (Unlocker Web):** Conecta el dispositivo por WiFi y utiliza la herramienta de desbloqueo oficial de la comunidad CrossPoint ([crosspointreader.com](https://crosspointreader.com/)) para liberar las particiones OTA.
+- **Opción B (Escape Hatch Firmware vía SD - Recomendado si falla el Unlocker):**
+  1. Si la herramienta web arroja errores de conexión (ej. *Network unstable 9*) o el puerto USB no responde, descarga el firmware de recuperación **Escape Hatch** (`escape-hatch.bin`).
+  2. Renombra el archivo a `update.bin` y cópialo en la raíz de una tarjeta MicroSD formateada en FAT32.
+  3. Inserta la MicroSD en el Xteink y arráncalo en modo recuperación (manteniendo pulsado el botón de actualización o combinación de encendido).
+  4. El firmware minimalista **Escape Hatch** arrancará en pantalla, permitiendo puentear el bloqueo chino e instalar una versión base de CrossPoint / CrossInk directamente desde la tarjeta SD.
+
+#### Paso 2: Flashear firmware base funcional
+- Desde el menú de **Escape Hatch**, selecciona flashear un firmware base de CrossPoint / CrossInk en la partición inactiva y activa el cambio de slot de arranque.
+- Al reiniciar, tu dispositivo ya contará con el bootloader abierto y la interfaz del sistema operativo libre.
+
+#### Paso 3: Actualizar a CrossInk Passcode 1.0
+- Una vez dentro del sistema con el bootloader desbloqueado, copia **`crossink-passcode-1.0.bin`** a la tarjeta SD.
+- Dirígete a **Settings → System → SD Card Firmware Update**, selecciona el binario y listo: tendrás la versión con bloqueo por PIN, pantalla de Lost & Found y todas las optimizaciones activadas.
+
+---
+
+### Métodos Alternativos (Flasheo Directo por Cable)
+
+#### Vía Herramienta Web (Dispositivos con USB desbloqueado)
+1. Conecta tu Xteink X4 Pro a la computadora vía USB-C en modo bootloader (mantén presionado el botón de arranque al conectar).
+2. Abre [CrossPoint Flash Tools](https://crosspointreader.com/#flash-tools) o [ESP Web Flasher](https://espressif.github.io/esptool-js/).
+3. Selecciona el archivo binario **`crossink-passcode-1.0.bin`** y flashea en el offset de aplicación `0x10000`.
+
+#### Vía esptool (Línea de Comandos)
 ```bash
-esptool.py --chip esp32s3 --port COM_TU_PUERTO write_flash 0x10000 releases/crossink-passcode-1.0.bin
+esptool.py --chip esp32s3 --port COM_TU_PUERTO -b 921600 write_flash 0x10000 releases/crossink-passcode-1.0.bin
 ```
-
-### Opción 3: Actualización desde Tarjeta SD (si tu bootloader lo soporta)
-1. Copia el archivo `crossink-passcode-1.0.bin` renombrado como `update.bin` o el nombre reconocido por tu bootloader en la raíz de la tarjeta MicroSD.
-2. Enciende el dispositivo manteniendo presionado el botón asignado para actualización.
 
 ---
 
