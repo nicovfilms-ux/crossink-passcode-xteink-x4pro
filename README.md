@@ -1,242 +1,105 @@
-> **This is a personal fork of [CrossInk](https://github.com/uxjulia/CrossInk)** that adds [BookOrbit](https://github.com/bookorbit/bookorbit) integration — two-way sync of reading progress, highlights and bookmarks, and a catalog browser for downloading books straight from your own server — plus a working clock on hardware that has no clock chip.
+# CrossInk Passcode Edition (Xteink X4 Pro)
 
-Everything else — fonts, themes, reader features, reading stats, controls, the web server — comes from CrossInk unchanged, with one exception: KOReader Sync is removed to make room (see below). See the [upstream README](https://github.com/uxjulia/CrossInk#readme) for those, and the [docs](./docs/) folder in this repository for the detailed guides.
+[![Release](https://img.shields.io/badge/release-v1.0--passcode-blue.svg)](https://github.com/nicovfilms-ux/crossink-passcode-xteink-x4pro/releases)
+[![Device](https://img.shields.io/badge/tested%20on-Xteink%20X4%20Pro-success.svg)](https://github.com/nicovfilms-ux/crossink-passcode-xteink-x4pro)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**Note**: this fork publishes releases for the Xteink X3, X4, X4 Pro and X4 Classic, and the Seeed reTerminal Sticky.
-
----
-
-## What's different in this fork
-
-- **BookOrbit progress sync** — sync your reading position with a self-hosted BookOrbit server.
-- **BookOrbit highlight and bookmark sync** — two-way: what you highlight or bookmark on the device appears in the web reader at its exact place in the text, what you add on the web lands in the book, and deletions propagate both ways.
-- **BookOrbit catalog browser** — browse your server's library on the device and download EPUBs over WiFi, including by author, series or collection.
-- **Offline shortcuts to your own books** — "On device" and "In progress" categories that open a book directly, without touching the network.
-- **Reading statistics pushed to BookOrbit** — your reading time, streaks and pace on the server's dashboard, fed by the pages you turn on the device.
-- **A working clock on the X4** — the status-bar clock, which upstream can only show on hardware that has a clock chip, plus an opt-in mode that keeps the time running through sleep.
-- **KOReader Sync is removed** — its screens, settings and shortcut are gone. The X3/X4 firmware gets a 6.5 MB partition, and this fork's BookOrbit layer plus CrossInk's own growth stopped fitting in it; dropping the second sync provider is what buys the room. Credentials already saved on the SD card are left alone, simply unread.
-
-BookOrbit exposes a KOReader-compatible sync API, so this fork talks to it the same way the official BookOrbit KOReader plugin does. Your BookOrbit server must be recent enough to serve the KOReader plugin endpoints under `{server}/api/v1/koreader` — including `plugin/catalog/*` for the catalog browser and `plugin/annotations/*` / `plugin/bookmarks/*` for highlight and bookmark sync (servers without those are detected, and the missing steps are simply skipped).
+> [!WARNING]
+> **Compatibilidad de hardware:** Este firmware ha sido compilado, ajustado y probado minuciosamente en el **Xteink X4 Pro**. No se garantiza el funcionamiento en otras variantes de Xteink (X3, X4 estándar, X4 Classic) ni otros dispositivos ESP32 e-ink. Si decides flashearlo en otro hardware, **hazlo con cautela y bajo tu propio riesgo**.
 
 ---
 
-## Setting up your BookOrbit account
+## 📖 Descripción del Proyecto
 
-### On your BookOrbit server
+**CrossInk Passcode Edition** es una evolución optimizada de [CrossInk](https://github.com/uxjulia/CrossInk) / [CrossInk-Bookorbit](https://github.com/agosez/CrossInk-Bookorbit) que incorpora una **capa de seguridad nativa con bloqueo por código PIN**, tarjeta de propietario / recuperación ("Lost & Found"), optimizaciones en el consumo y tiempos de suspensión, así como mejoras visuales y de rendimiento en la navegación de carátulas (Lyra Theme).
 
-The device signs in with your account's **KOReader sync credentials**, not your BookOrbit web login. Create them once, in **Settings → Devices & Sync → KOReader**, with **Create credentials** — each BookOrbit account has a single set, shared by all of its readers. Once they exist, the page's **Setup** panel shows the **Sync server URL**:
-
-![The KOReader Sync page of BookOrbit's settings, with the Sync server URL in its Setup panel](docs/images/bookorbit/koreader.png)
-
-That URL is what the device asks for below. The preconfigured plugin offered on the same page is for actual KOReader devices — CrossInk needs only the URL and the credentials.
-
-### On the device
-
-1. Go to **Settings → System → BookOrbit Sync**.
-2. Fill in **Username** and **Password** — the KOReader sync credentials created above — and **Server URL**, the Sync server URL shown on the same page. The URL accepts a bare hostname (`books.example.com`); `https://` is assumed, and a pasted `/api/v1` or `/api/v1/koreader` suffix is stripped for you.
-3. Choose **Authenticate**. The device connects to WiFi and validates the credentials against your server. You should see _Successfully authenticated!_
-
-Credentials live on the SD card in `/.crosspoint/bookorbit.json`, obfuscated with the device's hardware MAC — the same scheme CrossInk uses for KOReader credentials.
-
-## Syncing reading progress
-
-Open a book, then **Menu → Bookmarks tab → BookOrbit Sync**. The device compares the position stored on the server with your local one — chapter, page, percentage and the device name that last uploaded — and offers two choices:
-
-- **Apply remote progress** — jump to the position from your other reader.
-- **Upload local progress** — publish your current position to the server.
-
-The option matching the furthest-read position is preselected. If the server has no progress for the book yet, you are offered a straight upload.
-
-### Smart sync
-
-**Settings → System → BookOrbit Sync → Sync Behavior** chooses what a sync does with that screen. **Ask every time**, the default, always shows it. **Smart sync** resolves the clear cases on its own and only asks when asking is genuinely useful:
-
-- If the server is further ahead _and_ has been updated since this device last synced the book, the server position is applied and you are back in the book.
-- If your local position is further ahead _and_ the server has not moved since this device last synced, your position is uploaded — the screen flashes "Upload successful" and returns on its own.
-- Equal positions just say "Already synced" and return.
-
-Anything else still shows the choice screen: the first sync of a book on a device, a server that reports no dates, and above all a genuine conflict — both sides having moved since your last sync, which is exactly the case a human should arbitrate. Each device remembers its last sync of each book in a small file next to the book's cache, and every sync updates it whichever mode is active, so the history smart sync relies on is already in place when you enable it.
-
-BookOrbit identifies books by the binary partial-MD5 hash of the EPUB file (the same "Binary" matching KOReader offers), so the **same EPUB file** has to be present on both readers for positions to pair up. A book downloaded from your BookOrbit catalog is the exact file your server knows about, so it matches automatically.
-
-### Syncing without opening the menu
-
-**Settings → Controls** lets you bind _BookOrbit Sync_ to the power button (short or long press) or to a long press on Menu or Back. The action also works outside the reader: it syncs the book you last had open, or opens the BookOrbit settings if no account is configured yet.
-
-### Syncing when the device goes to sleep
-
-Turn on **Settings → System → BookOrbit Sync → Sync on Sleep** and the device syncs the book you last had open every time it goes to sleep, whether from the power button, the sleep timer or a Quick Lock timeout. The sleep screen goes up first. The device then joins a saved Wi-Fi network (the last one used first, then any other saved network in range), runs a full sync behind that screen, draws the sleep screen again and finishes going to sleep. Nothing else is shown. The second refresh is there because the sleep screen loses some contrast while the sync runs behind it; a Quick Resume screen comes back in plain black and white, without the smoothed text the reader draws.
-
-- **Waking the device cancels the sync.** Press Power the way you would to wake it. The sync stops at its next step and the device wakes as usual. Whatever the sync had already sent is kept, and the rest follows on the next sync.
-- **Progress follows the Smart sync rules**, whatever **Sync Behavior** says, because nobody is there to answer the choice screen. When those rules cannot decide (the first sync of a book on this device, or both sides having moved), progress is left alone for your next manual sync. Highlights, bookmarks and reading sessions sync either way.
-- **It is skipped** when no book is open, when no Wi-Fi network is saved, and when the battery is below 10% with no charger connected.
-
-Each sync keeps Wi-Fi on for a few seconds, and longer when no saved network answers, so the option is off by default.
-
-## Syncing highlights and bookmarks
-
-Every BookOrbit sync of a book also exchanges its highlights and bookmarks with the
-server, in both directions:
-
-- **Highlights** made on the device appear in BookOrbit's web reader at their exact
-  position in the text, with the book's exact wording; highlights created in the web
-  reader come down and are drawn in the book. Deleting one on either side removes it
-  from the other at the next sync.
-- **Bookmarks** work the same way: a page bookmarked on the device shows up in the web
-  reader, and a bookmark placed on the web lands in the book — on the right page when
-  the device has already read that chapter, at the chapter start otherwise, refined the
-  first time you jump to it.
-
-Nothing to enable: if an account is configured, both ride along with every sync, and
-the sync screen reports what each exchange did ("Highlights: 2 sent, 1 added, 0
-removed"). Book matching is the same binary hash as progress sync, so the same EPUB
-file has to be on both sides.
-
-Details worth knowing:
-
-- New highlights upload in batches of 8 per sync — this hardware bounds what fits
-  beside an open TLS connection — so a large backlog drains over a few syncs.
-- Highlights and bookmarks made before this feature existed gain their sync identity
-  progressively as you read, one chapter per visit, and start syncing from there.
-- A highlight's stored text is capped at 4 KB; an extremely long web highlight is drawn
-  up to where that cap cuts its text.
-
-## Reading statistics
-
-Every BookOrbit sync of a book also uploads the reading it has recorded since the last
-one: one event per page you read, with when you started it and how long you stayed on it.
-That is what the official BookOrbit KOReader plugin sends too, so the server's reading
-time, streaks, pace and reading-DNA views fill in the same way. It is one-way — BookOrbit
-has no API to read stats back — so the device's own Reading Stats screens are unaffected
-and keep working offline.
-
-Nothing to enable: if an account is configured, the events ride along with each sync. They
-are queued per book on the SD card in the meantime, so nothing is lost if you read offline
-for a week.
-
-### How faithful the timestamps are
-
-**On the X3 this section does not apply**: it has a clock chip, so every page event is
-stamped with the real time and lands exactly where it belongs.
-
-The X4 has no clock chip. Its clock stops whenever the device sleeps, and the firmware can
-only put it back to the last time it knew about at wake — so a page read at 20:00 can be
-recorded as if it happened at 08:20. Rather than upload that, the device records which
-_clock timeline_ each event belongs to and fixes the timestamps at upload time, using the
-error each sync measures against NTP. Two cases:
-
-- **With Settings → System → Device → Keep Clock While Asleep on**, the clock never stops,
-  so the only error is the oscillator's drift — a couple of minutes per 12 h. Each sync
-  measures that drift and spreads it across the events in proportion to when they
-  happened, so sessions land within seconds of reality. Nothing to think about. Note that
-  the drift is only corrected in the _uploaded stats_: the clock **shown** on screen stays
-  a minute or two off until the next WiFi connection resets it.
-- **With the option off**, accuracy depends on you syncing at least once per run — a run
-  being everything between two sleeps. A sync anchors the run's whole timeline, so every
-  session it uploads is placed correctly, including the ones read before it in that run.
-
-The friction points of leaving the option off:
-
-- **A run with no sync in it keeps a wrong timestamp for good.** Its sessions are dated
-  from the last time the device knew, which is where the _previous_ run ended — so they
-  pile up right after it. Read in the morning, sleep, read in the evening and sync only
-  then, and the morning session is the one that lands wrong, possibly on the previous day.
-  That is a real cost on the server side: BookOrbit's streaks and daily charts key off the
-  date, so a misdated session breaks a streak that you did not actually break.
-- **The order and the pacing are always right, only the anchor moves.** Gaps between pages
-  within a run are measured by a timer that keeps running, so a shifted block stays
-  internally exact — a session never appears to last longer or shorter than it did.
-- **It gets worse with each sleep, not with time.** Three runs without a sync means three
-  blocks stacked onto the same anchor, not a gradual smear.
-- **The cheap mitigation is a button.** Bind _BookOrbit Sync_ to the power button under
-  **Settings → Controls** and press it when you put the book down; one sync per run is all
-  the accuracy needs. It is also what drains the queue, so it costs nothing extra.
-  **Sync on Sleep** does the same every time the device sleeps, with no button to press.
-- **A flat battery or a firmware flash loses the clock entirely.** The sessions queued
-  before that still upload correctly as long as a sync happens in the same run, because
-  they are placed relative to that sync rather than by absolute time.
-
-## Browsing and downloading from the catalog
-
-Reach the catalog from **Settings → System → BookOrbit Sync → Browse Catalog**, or from the **BookOrbit** entry in the home menu (it appears once an account is configured).
-
-The root list contains:
-
-| Entry                                         | What it shows                                                                                                                                       |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Recently added / Continue reading / All books | Your server's own sections                                                                                                                          |
-| **Authors** / **Series**                      | Paged lists with a book count per entry; pick one to see its books (series are listed in series order)                                              |
-| **Collections**                               | Your server's collections, with a book count per entry; pick one to see its books                                                                   |
-| **Search**                                    | Free-text search of your library                                                                                                                    |
-| **On device**                                 | Everything downloaded from the catalog, wherever it was filed, plus every EPUB in the download folder, the SD card root and `/Read` — works offline |
-| **In progress**                               | Recent books you haven't finished yet — works offline                                                                                               |
-
-In a server book list, **Confirm** downloads the book into the download folder configured in the BookOrbit settings (the SD card root by default). A download that gets interrupted resumes automatically on retry, and **Back** cancels it. Books already present on the device are marked with a dot at the end of the line, so you can tell at a glance what is worth downloading.
-
-The file is named by **your server's KOReader file naming template** — BookOrbit's _Settings → Koreader → File Naming_, the same template its own KOReader plugin follows — so a book can land inside a series folder, for instance. BookOrbit resolves the template and tells the device where the file belongs; a per-device override set on the server is honoured too, and any folder it asks for is created under your download folder. If your account has no template, BookOrbit's default applies, which files books under `Series/` and `Standalone/`. Books downloaded before this behaviur existed are left where they are.
-
-In **On device** and **In progress**, Confirm opens the book in the reader instead of downloading it.
-
-> If the catalog reports _"BookOrbit sent an unexpected reply"_, the server answered but not with the catalog API — usually a BookOrbit version without the KOReader catalog endpoints, a wrong server URL, or a reverse proxy/SSO layer intercepting `/api/v1/koreader/plugin/*`.
+El archivo binario listo para instalación comunitaria es:
+👉 **`crossink-passcode-1.0.bin`** (disponible en la carpeta [`releases/`](./releases/crossink-passcode-1.0.bin) y en la sección de [Releases de GitHub](https://github.com/nicovfilms-ux/crossink-passcode-xteink-x4pro/releases)).
 
 ---
 
-## Clock on devices without a clock chip
+## 🔒 Capa de Seguridad (PIN & Lost & Found)
 
-The X4 has no battery-backed RTC, so upstream's status-bar clock never appeared on it and
-its settings were hidden. Here the clock reads the device's system clock instead, which is
-refreshed from NTP on every WiFi connection.
+Esta edición resuelve la ausencia de privacidad en los lectores electrónicos portátiles mediante un subsistema integrado de control de acceso:
 
-To turn it on, set **Settings → Display → Hide Clock** to `Never` (or `In reader` if you
-would rather not see it while reading), then set **Settings → System → Device → Clock UTC
-Offset** and **Clock Format**. The time appears once the device has been connected to WiFi at least
-once — before that there is nothing to display.
-
-### Keeping the time through sleep, and what it costs
-
-By default the device releases its own power latch when it sleeps, which cuts power to
-everything including the timer that counts wall-clock time. The time is therefore lost at
-every sleep and only comes back at the next WiFi connection. **Settings → System → Device
-→ Keep Clock While Asleep** skips that release, so the board stays powered, the processor
-enters a genuine deep sleep, and the clock keeps running.
-
-It is off by default because it trades standby battery life for an almost always-correct clock (time will drift when device is not connected to WiFi for a long time).
-Before leaving it on, know that:
-
-- **the device no longer powers off completely when it sleeps.** It keeps drawing a small
-  current, so it will slowly discharge in a drawer instead of sitting indefinitely.
-- **the cost has only been spot-checked.** On an X4, twelve hours of sleep with the setting
-  enabled cost about 5% of battery, which extrapolates to roughly ten days of standby.
-  Over the same twelve hours the clock drifted two to three minutes, since it runs on an
-  internal RC oscillator rather than a crystal; the next WiFi connection resets it. Treat
-  both as one measurement rather than a specification, and watch your own battery over a
-  few days before relying on it.
-
-Turning the setting back off restores the stock behaviour exactly.
-
-It also decides how faithful your uploaded reading-session timestamps are — see
-[Reading statistics](#reading-statistics), which is the main reason to leave it on.
+1. **Bloqueo por PIN de 4 o 6 dígitos**:
+   - Selector configurable de longitud de código PIN (4 o 6 dígitos) con renderizado dinámico de indicadores numéricos.
+   - Teclado táctil en pantalla optimizado para tinta electrónica con retroalimentación instantánea, borrado directo (icono de retroceso integrado) y envío automático tras completar los dígitos.
+2. **Disparadores de Bloqueo Inteligentes (Lock Triggers)**:
+   - **Al suspender / apagar**: Bloqueo inmediato al entrar en reposo desde el botón de encendido o temporizador.
+   - **Por inactividad**: Tiempo configurable independiente del sleep del lector (incluyendo opción de *Nunca* para uso continuo).
+   - **Acceso rápido**: Activación bajo demanda desde el menú de ajustes del sistema.
+3. **Flujo de Recuperación (Forgot PIN & Pregunta de Seguridad)**:
+   - Pregunta secreta configurada por el usuario con respuesta cifrada/hasheada en almacenamiento no volátil para restablecer el PIN sin perder libros ni progreso.
+4. **Tarjeta de Información del Propietario ("Lost & Found")**:
+   - En la pantalla de bloqueo, se incluye un acceso directo de información (icono `ℹ`) que abre una tarjeta con los datos de contacto del dueño (Nombre y Teléfono con prefijo internacional automático `+`).
+   - Permite que quien encuentre el dispositivo extraviado pueda contactarte sin tener acceso a tus libros ni datos privados.
+5. **Personalización del Título**:
+   - Nombre de usuario personalizado en el encabezado de bloqueo (`[Nombre] - XTEINK`).
 
 ---
 
-## Installation
+## ⚡ Optimizaciones y Rendimiento
 
-Download the `firmware-*.bin` for your device from **this repository's** [releases page](https://github.com/agosez/CrossInk-Bookorbit/releases) — not upstream's, which does not include BookOrbit support. CrossInk's own web installer only offers upstream builds, so flash the file as a custom firmware with the [CrossPoint flash tools](https://crosspointreader.com/#flash-tools), from the command line, or from the SD card — [Installation](./docs/installation.md) walks through each path, including USB-locked devices and reverting to upstream CrossInk.
+- **Suspensión Instantánea (Zero Lag Sleep)**:
+  - Eliminación de popups bloqueantes transitorios antes de suspender (`Entering Sleep`), logrando que la pantalla de reposo se plasme de inmediato sin destellos dobles.
+  - Tasa de refresco ajustada a `FAST_REFRESH` en la transición de pantallas de suspensión, reduciendo significativamente el parpadeo y el consumo energético.
+- **Persistencia Atómica**:
+  - Guardado seguro de credenciales y configuraciones en la partición NVS / SD card de forma atómica para prevenir corrupción de datos ante reinicios abruptos.
+- **Gestión de Teclas Físicas**:
+  - Detección precisa de pulsación corta y pulsación prolongada en el botón de encendido para diferenciar reposo inmediato de apagado completo.
+  - Soporte de modo oscuro en la tecla Home y respuesta táctil acelerada.
 
-Once this firmware is installed, **Settings → System → Check for Updates** resolves against this fork's releases, so later versions arrive over the air. Devices running upstream CrossInk will not see these releases: the first install has to be done by USB or SD card.
+---
 
-## Development
+## 🎨 Ajustes del Tema y Navegación (Lyra Theme)
 
-```sh
-pio run -e default --target upload   # X3/X4 build, flashed over USB-C; see platformio.ini for the other devices
+- **Distribución Dinámica de Carátulas (Dynamic Cover Layout)**:
+  - Rediseño del tema `Lyra 3 Covers` para adaptarse con precisión según la cantidad de libros recientes (1 a 6 libros).
+  - Cálculo de proporciones de aspecto reales para evitar distorsiones en las portadas de los EPUBs.
+  - Centrado balanceado de títulos y líneas de progreso de lectura (porcentaje y tiempo restante).
+- **Navegación Matricial con Botones Físicos**:
+  - Navegación bidireccional suave (Arriba, Abajo, Izquierda, Derecha) entre portadas y menú inferior, optimizada tanto para control táctil como por botones físicos en el X4 Pro.
+
+---
+
+## 🚀 Instalación en Xteink X4 Pro
+
+### Opción 1: Mediante Herramienta Web (Recomendado)
+1. Conecta tu Xteink X4 Pro a la computadora vía USB-C en modo flasheo.
+2. Abre la herramienta web de flasheo ESP32 / CrossPoint Web Flasher ([crosspointreader.com](https://crosspointreader.com/#flash-tools) o [ESP Web Flasher](https://espressif.github.io/esptool-js/)).
+3. Selecciona el archivo binario: **[`releases/crossink-passcode-1.0.bin`](./releases/crossink-passcode-1.0.bin)**.
+4. Flashea en la dirección de memoria de aplicación estándar (`0x10000` según el esquema de partición).
+
+### Opción 2: Mediante esptool (Línea de Comandos)
+```bash
+esptool.py --chip esp32s3 --port COM_TU_PUERTO write_flash 0x10000 releases/crossink-passcode-1.0.bin
 ```
 
-See [Getting Started](./docs/development/getting-started.md) for prerequisites and validation commands, and [Testing and Debugging](./docs/development/testing-debugging.md) for serial logging and static analysis. `AGENTS.md` holds the repository's engineering conventions.
+### Opción 3: Actualización desde Tarjeta SD (si tu bootloader lo soporta)
+1. Copia el archivo `crossink-passcode-1.0.bin` renombrado como `update.bin` o el nombre reconocido por tu bootloader en la raíz de la tarjeta MicroSD.
+2. Enciende el dispositivo manteniendo presionado el botón asignado para actualización.
 
-## Documentation
+---
 
-- [User Guide](./docs/user-guide.md) and [Reader Features](./docs/reader-features.md)
-- [Controls](./docs/controls.md) — full button action list
-- [Installation](./docs/installation.md)
-- [Data Cache](./docs/data-cache.md) and [File Formats](./docs/file-formats.md)
-- [Common issues](./docs/troubleshooting.md)
+## 🛠️ Compilación desde el Código Fuente
+
+El proyecto utiliza [PlatformIO](https://platformio.org/):
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/nicovfilms-ux/crossink-passcode-xteink-x4pro.git
+cd crossink-passcode-xteink-x4pro
+
+# Compilar para el entorno X4 Pro
+pio run -e default
+
+# Compilar y subir vía USB
+pio run -e default --target upload
+```
+
+---
+
+## ⚖️ Licencia y Créditos
+
+Este proyecto está distribuido bajo la licencia [MIT](LICENSE). Basado en el excelente trabajo de la comunidad de [CrossInk](https://github.com/uxjulia/CrossInk) y [CrossInk-Bookorbit](https://github.com/agosez/CrossInk-Bookorbit).
