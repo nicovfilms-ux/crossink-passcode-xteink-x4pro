@@ -34,7 +34,10 @@ Esta edición resuelve la ausencia de privacidad en los lectores electrónicos p
 4. **Tarjeta de Información del Propietario ("Lost & Found")**:
    - En la pantalla de bloqueo, se incluye un acceso directo de información (icono `ℹ`) que abre una tarjeta con los datos de contacto del dueño (Nombre y Teléfono con prefijo internacional automático `+`).
    - Permite que quien encuentre el dispositivo extraviado pueda contactarte sin tener acceso a tus libros ni datos privados.
-5. **Personalización del Título**:
+5. **Gestos y Controles en Pantalla de Bloqueo**:
+   - **Doble Tap en pantalla para Luz Frontal**: Puedes encender o apagar la luz frontal rápidamente haciendo doble toque en la pantalla sin necesidad de desbloquear el dispositivo.
+   - **Botón Home habilitado en Bloqueo**: Nueva opción en **Ajustes → Controles → Botón Inicio → En pantalla de bloqueo**. Permite usar el **Doble toque** y la **Pulsación larga** configurados por el usuario directamente desde la pantalla de bloqueo, manteniendo el toque simple bloqueado por seguridad para evitar salir de la pantalla de autenticación.
+6. **Personalización del Título**:
    - Nombre de usuario personalizado en el encabezado de bloqueo (`[Nombre] - XTEINK`).
 
 ---

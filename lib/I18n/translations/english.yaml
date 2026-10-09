@@ -921,4 +921,5 @@ STR_CONTACT_NAME: "Contact Name"
 STR_CONTACT_PHONE: "Phone Number"
 STR_LOST_AND_FOUND_INFO: "If you found this device, please contact the owner:"
 STR_NO_CONTACT_INFO: "No contact info configured. Set it in Settings > Device Lock > Lost & Found."
+STR_ON_LOCK_SCREEN: "On Lock Screen"
 

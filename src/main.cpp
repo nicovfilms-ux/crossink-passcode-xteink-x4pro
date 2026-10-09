@@ -1070,13 +1070,16 @@ bool handleX4ProHomeKeyShortcuts() {
     return false;
   }
 
-  // A modal owns Home too. Clear a pending single tap so a gesture started
-  // while Quick Actions is open cannot fire after the popup closes.
+  // A modal owns Home too. If device is locked on PIN screen and Home on lock screen is enabled,
+  // allow double-tap and long-press while suppressing single tap.
+  const bool isDeviceLocked = LockManager::getInstance().isLocked();
   if (activityManager.blocksGlobalInput()) {
-    const bool hadPendingTap = x4ProHomeKeyTapPending;
-    x4ProHomeKeyTapPending = false;
-    mappedInputManager.clearDeferredHomeGesture();
-    return hadPendingTap || wasX4ProHomeKeyTapped() || wasX4ProHomeKeyLongPressed();
+    if (!isDeviceLocked || !SETTINGS.homeButtonOnLockScreenEnabled) {
+      const bool hadPendingTap = x4ProHomeKeyTapPending;
+      x4ProHomeKeyTapPending = false;
+      mappedInputManager.clearDeferredHomeGesture();
+      return hadPendingTap || wasX4ProHomeKeyTapped() || wasX4ProHomeKeyLongPressed();
+    }
   }
 
   // Reader menus set the touchscreen override while they are active, which
@@ -1104,7 +1107,10 @@ bool handleX4ProHomeKeyShortcuts() {
     // A single-tap action must wait briefly so the reader does not navigate
     // away before a second capacitive-key tap can be recognized.
     x4ProHomeKeyTapPending = false;
-    if (SETTINGS.homeButtonTapAction == CrossPointSettings::HOME_BUTTON_BACK_HOME) {
+    if (isDeviceLocked) {
+      // Single tap is disabled on lock screen (does not go back/home or trigger tap shortcuts)
+      completedPendingTap = true;
+    } else if (SETTINGS.homeButtonTapAction == CrossPointSettings::HOME_BUTTON_BACK_HOME) {
       // Keep reader menus and other overlays on their existing local Home route.
       mappedInputManager.queueDeferredHomeGesture();
     } else {
@@ -1117,7 +1123,7 @@ bool handleX4ProHomeKeyShortcuts() {
     // A hold is a separate gesture, not the second half of a double tap.
     x4ProHomeKeyTapPending = false;
     if (SETTINGS.homeButtonLongPressAction == CrossPointSettings::HOME_BUTTON_READER_MENU) {
-      if (activityManager.isReaderActivity()) {
+      if (!isDeviceLocked && activityManager.isReaderActivity()) {
         return activityManager.openReaderMenuFromShortcut();
       }
       return handleGlobalPowerButtonAction(CrossPointSettings::SHORT_PWRBTN::TOGGLE_DARK_MODE);

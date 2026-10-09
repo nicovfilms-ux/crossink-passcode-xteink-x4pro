@@ -15,6 +15,7 @@
 #include "components/icons/tablerFilledIcons.h"
 #include "fontIds.h"
 #include "lock/LostAndFoundActivity.h"
+#include <CrossInkHalFrontlight.h>
 
 PinLockActivity::PinLockActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
                                  const Mode mode, const ResumeTarget resumeTarget,
@@ -433,6 +434,34 @@ void PinLockActivity::loop() {
   int tx = 0;
   int ty = 0;
   if (mappedInput.wasScreenTapped(tx, ty)) {
+    const unsigned long now = millis();
+    bool isDoubleTap = false;
+    if (lastScreenTapAt_ > 0 && (now - lastScreenTapAt_) <= 400) {
+      const int dx = std::abs(tx - lastTapX_);
+      const int dy = std::abs(ty - lastTapY_);
+      if (dx <= 60 && dy <= 60) {
+        isDoubleTap = true;
+      }
+    }
+
+    if (isDoubleTap) {
+      lastScreenTapAt_ = 0;
+      lastTapX_ = -1;
+      lastTapY_ = -1;
+      if (Frontlight.present()) {
+        const bool lightOn = !Frontlight.isOn();
+        Frontlight.setOn(lightOn);
+        SETTINGS.frontlightOn = lightOn ? 1 : 0;
+        activityManager.persistGlobalSettings();
+        LOG_INF("LIGHT", "Frontlight toggled %s by lock screen double tap", lightOn ? "on" : "off");
+      }
+      return;
+    }
+
+    lastScreenTapAt_ = now;
+    lastTapX_ = tx;
+    lastTapY_ = ty;
+
     for (const auto& k : keys_) {
       if (tx >= k.x && tx <= (k.x + k.w) && ty >= k.y && ty <= (k.y + k.h)) {
         handleKeyPress(k.key);

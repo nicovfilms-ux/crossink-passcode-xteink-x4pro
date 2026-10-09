@@ -74,4 +74,8 @@ class PinLockActivity final : public Activity {
   void onForgotPin();
   void renderDotsOnly();
   std::string getPromptText() const;
+
+  unsigned long lastScreenTapAt_ = 0;
+  int lastTapX_ = -1;
+  int lastTapY_ = -1;
 };

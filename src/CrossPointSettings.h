@@ -511,6 +511,8 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // Home-key devices can lock the capacitive Home key while a reader page is
   // active. Reader menus temporarily override this without changing the value.
   uint8_t homeButtonInReaderEnabled = 1;
+  // Capacitive Home-key enabled on lock screen (supports double tap and long press; tap is disabled on lock screen).
+  uint8_t homeButtonOnLockScreenEnabled = 1;
   // EPUB reading orientation settings
   // 0 = portrait (default), 1 = landscape clockwise, 2 = inverted, 3 = landscape counter-clockwise
   uint8_t orientation = PORTRAIT;

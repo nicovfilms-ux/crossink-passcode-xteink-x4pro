@@ -763,6 +763,10 @@ inline const std::vector<SettingInfo>& getBaseSettingsList() {
                           {StrId::STR_ENABLED, StrId::STR_DISABLED}, "homeButtonInReaderEnabled",
                           StrId::STR_CAT_CONTROLS)
             .withEnumRawValues({1, 0}));
+    add(SettingInfo::Enum(StrId::STR_ON_LOCK_SCREEN, &CrossPointSettings::homeButtonOnLockScreenEnabled,
+                          {StrId::STR_ENABLED, StrId::STR_DISABLED}, "homeButtonOnLockScreenEnabled",
+                          StrId::STR_CAT_CONTROLS)
+            .withEnumRawValues({1, 0}));
     add(buildHomeButtonActionSetting(StrId::STR_HOME_BUTTON_TAP, &CrossPointSettings::homeButtonTapAction,
                                      "homeButtonTapAction"));
     add(buildHomeButtonActionSetting(StrId::STR_HOME_BUTTON_DOUBLE_TAP, &CrossPointSettings::homeButtonDoubleTapAction,
@@ -1318,8 +1322,9 @@ inline std::vector<SettingInfo> buildControlsTwoFingerSwipeSettingsList(const st
 
 inline std::vector<SettingInfo> buildControlsHomeButtonSettingsList(const std::vector<SettingInfo>& allSettings) {
   std::vector<SettingInfo> settings;
-  settings.reserve(4);
+  settings.reserve(5);
   addSettingByName(settings, allSettings, StrId::STR_IN_READER);
+  addSettingByName(settings, allSettings, StrId::STR_ON_LOCK_SCREEN);
   addSettingByName(settings, allSettings, StrId::STR_HOME_BUTTON_TAP);
   addSettingByName(settings, allSettings, StrId::STR_HOME_BUTTON_DOUBLE_TAP);
   addSettingByKey(settings, allSettings, "homeButtonLongPressAction");
