@@ -217,7 +217,8 @@ void Lyra3CoversTheme::drawRecentBookCover(GfxRenderer& renderer, Rect rect, con
 
     const int maxLineWidth = slot.slotW - 6;
     const int maxTitleLines = (count <= 2) ? 2 : 1;
-    const auto titleLines = renderer.wrappedText(SMALL_FONT_ID, recentBooks[i].title.c_str(), maxLineWidth, maxTitleLines);
+    const auto titleLines =
+        renderer.wrappedText(SMALL_FONT_ID, recentBooks[i].title.c_str(), maxLineWidth, maxTitleLines);
     const int titleLineHeight = renderer.getLineHeight(SMALL_FONT_ID);
 
     const std::string progressInfo = formatBookProgressInfo(recentBooks[i]);
@@ -227,14 +228,15 @@ void Lyra3CoversTheme::drawRecentBookCover(GfxRenderer& renderer, Rect rect, con
     const int textBlockHeight = titleBlockHeight + 2 + progressLineHeight + 4;
     const int dynamicCardHeight = (slot.coverY - slot.slotY) + slot.coverH + 4 + textBlockHeight;
 
-    TouchRegistry::getInstance().add(Rect{slot.slotX, slot.slotY, slot.slotW, dynamicCardHeight}, i, TouchRegistry::Cover);
+    TouchRegistry::getInstance().add(Rect{slot.slotX, slot.slotY, slot.slotW, dynamicCardHeight}, i,
+                                     TouchRegistry::Cover);
 
     if (bookSelected) {
       // Selection highlight wrapping around the cover and filling below
       const int topHeight = slot.coverY - slot.slotY;
       if (topHeight > 0) {
-        renderer.fillRoundedRect(slot.slotX, slot.slotY, slot.slotW, topHeight + 2, cornerRadius, true, true, false, false,
-                                 Color::LightGray);
+        renderer.fillRoundedRect(slot.slotX, slot.slotY, slot.slotW, topHeight + 2, cornerRadius, true, true, false,
+                                 false, Color::LightGray);
       }
       if (slot.coverX > slot.slotX) {
         renderer.fillRectDither(slot.slotX, slot.coverY, slot.coverX - slot.slotX, slot.coverH, Color::LightGray);

@@ -13,23 +13,12 @@
 
 class PinLockActivity final : public Activity {
  public:
-  enum class Mode : uint8_t {
-    Unlock,
-    SetPin,
-    ChangePin,
-    VerifyForDisable
-  };
+  enum class Mode : uint8_t { Unlock, SetPin, ChangePin, VerifyForDisable };
 
-  enum class ResumeTarget : uint8_t {
-    None,
-    Reader,
-    Home
-  };
+  enum class ResumeTarget : uint8_t { None, Reader, Home };
 
-  explicit PinLockActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
-                           Mode mode = Mode::Unlock,
-                           ResumeTarget resumeTarget = ResumeTarget::None,
-                           std::string resumeBookPath = "");
+  explicit PinLockActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, Mode mode = Mode::Unlock,
+                           ResumeTarget resumeTarget = ResumeTarget::None, std::string resumeBookPath = "");
 
   ~PinLockActivity() override = default;
 

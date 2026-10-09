@@ -32,10 +32,8 @@ void LostAndFoundActivity::render(RenderLock&&) {
   // Icon
   const int iconY = titleY + 35;
   freeink::ui::GfxRendererTarget target(renderer);
-  target.bitmap(freeink::ui::Rect{static_cast<int16_t>((screenW - icon_info_28.w) / 2),
-                                  static_cast<int16_t>(iconY),
-                                  static_cast<int16_t>(icon_info_28.w),
-                                  static_cast<int16_t>(icon_info_28.h)},
+  target.bitmap(freeink::ui::Rect{static_cast<int16_t>((screenW - icon_info_28.w) / 2), static_cast<int16_t>(iconY),
+                                  static_cast<int16_t>(icon_info_28.w), static_cast<int16_t>(icon_info_28.h)},
                 freeink::ui::bitmapFromIcon(icon_info_28), freeink::ui::BitmapMode::Center,
                 freeink::ui::Paint::solid(freeink::ui::Color::Black));
 
@@ -108,8 +106,8 @@ void LostAndFoundActivity::render(RenderLock&&) {
   const std::string closeText = tr(STR_BACK);
   const int closeW = renderer.getTextWidth(UI_10_FONT_ID, closeText.c_str(), EpdFontFamily::BOLD);
   const int closeH = renderer.getLineHeight(UI_10_FONT_ID);
-  renderer.drawText(UI_10_FONT_ID, closeBtn_.x + (closeBtn_.w - closeW) / 2,
-                    closeBtn_.y + (closeBtn_.h - closeH) / 2, closeText.c_str(), true, EpdFontFamily::BOLD);
+  renderer.drawText(UI_10_FONT_ID, closeBtn_.x + (closeBtn_.w - closeW) / 2, closeBtn_.y + (closeBtn_.h - closeH) / 2,
+                    closeText.c_str(), true, EpdFontFamily::BOLD);
 
   // Bottom hint
   GUI.drawButtonHints(renderer, tr(STR_BACK), "", "", "");

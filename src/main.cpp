@@ -121,6 +121,9 @@ inline esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause() { return ESP_SLEEP_
 #include "simulator/SimulatorSmokeTest.h"
 #endif
 #include "images/LoadingIcon.h"
+#include "lock/LockManager.h"
+#include "lock/PinLockActivity.h"
+#include "lock/PinStorage.h"
 #include "util/BatteryDiagnosticLog.h"
 #include "util/ButtonNavigator.h"
 #include "util/ButtonShortcutController.h"
@@ -130,9 +133,6 @@ inline esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause() { return ESP_SLEEP_
 #include "util/PowerButtonWakeWatcher.h"
 #include "util/ScreenshotUtil.h"
 #include "util/SleepWakePolicy.h"
-#include "lock/LockManager.h"
-#include "lock/PinLockActivity.h"
-#include "lock/PinStorage.h"
 
 GfxRenderer renderer(display);
 MappedInputManager mappedInputManager(gpio, renderer);
@@ -1970,8 +1970,8 @@ void setup() {
     const bool shouldResumeReader = !APP_STATE.openEpubPath.empty() && APP_STATE.lastSleepFromReader &&
                                     !mappedInputManager.isPressed(MappedInputManager::Button::Back) &&
                                     (APP_STATE.readerActivityLoadCount == 0);
-    const auto resumeTarget = shouldResumeReader ? PinLockActivity::ResumeTarget::Reader
-                                                 : PinLockActivity::ResumeTarget::Home;
+    const auto resumeTarget =
+        shouldResumeReader ? PinLockActivity::ResumeTarget::Reader : PinLockActivity::ResumeTarget::Home;
     const std::string resumePath = shouldResumeReader ? APP_STATE.openEpubPath : "";
     activityManager.replaceActivity(std::make_unique<PinLockActivity>(
         renderer, mappedInputManager, PinLockActivity::Mode::Unlock, resumeTarget, resumePath));

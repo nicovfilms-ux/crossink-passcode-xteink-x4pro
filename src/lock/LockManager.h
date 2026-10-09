@@ -2,19 +2,9 @@
 
 #include <cstdint>
 
-enum class LockState : uint8_t {
-  Disabled,
-  Locked,
-  Unlocked
-};
+enum class LockState : uint8_t { Disabled, Locked, Unlocked };
 
-enum class LockTrigger : uint8_t {
-  None,
-  Boot,
-  SleepWake,
-  QuickLock,
-  Manual
-};
+enum class LockTrigger : uint8_t { None, Boot, SleepWake, QuickLock, Manual };
 
 class LockManager {
  public:

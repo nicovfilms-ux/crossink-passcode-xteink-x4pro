@@ -31,12 +31,7 @@ class PinStorage {
   static bool checkAndApplySdRecovery();
 
   // Security question recovery
-  enum SecurityQuestion : uint8_t {
-    GreatestLove = 0,
-    FirstPet = 1,
-    FavoriteCountry = 2,
-    QUESTION_COUNT = 3
-  };
+  enum SecurityQuestion : uint8_t { GreatestLove = 0, FirstPet = 1, FavoriteCountry = 2, QUESTION_COUNT = 3 };
 
   static bool hasSecurityQuestion();
   static uint8_t getSecurityQuestion();

@@ -17,13 +17,9 @@
 #include "CrossPointSettings.h"
 #include "Logging.h"
 
-bool PinStorage::hasPin() {
-  return SETTINGS.pinHash[0] != '\0' && SETTINGS.pinSalt[0] != '\0';
-}
+bool PinStorage::hasPin() { return SETTINGS.pinHash[0] != '\0' && SETTINGS.pinSalt[0] != '\0'; }
 
-bool PinStorage::isLockEnabled() {
-  return (SETTINGS.deviceLockEnabled != 0) && hasPin();
-}
+bool PinStorage::isLockEnabled() { return (SETTINGS.deviceLockEnabled != 0) && hasPin(); }
 
 bool PinStorage::verifyPin(const char* pin) {
   if (!hasPin() || pin == nullptr) return false;
@@ -97,9 +93,7 @@ bool PinStorage::hasSecurityQuestion() {
   return SETTINGS.securityAnswerHash[0] != '\0' && SETTINGS.securityAnswerSalt[0] != '\0';
 }
 
-uint8_t PinStorage::getSecurityQuestion() {
-  return SETTINGS.securityQuestion;
-}
+uint8_t PinStorage::getSecurityQuestion() { return SETTINGS.securityQuestion; }
 
 std::string PinStorage::normalizeAnswer(const char* answer) {
   if (answer == nullptr) return "";
@@ -123,11 +117,31 @@ std::string PinStorage::normalizeAnswer(const char* answer) {
     const unsigned char c1 = static_cast<unsigned char>(*p);
     if (c1 == 0xC3 && (p + 1) <= end) {
       const unsigned char c2 = static_cast<unsigned char>(*(p + 1));
-      if (c2 == 0xA1 || c2 == 0x81) { normalized.push_back('a'); ++p; continue; }  // á, Á
-      if (c2 == 0xA9 || c2 == 0x89) { normalized.push_back('e'); ++p; continue; }  // é, É
-      if (c2 == 0xAD || c2 == 0x8D) { normalized.push_back('i'); ++p; continue; }  // í, Í
-      if (c2 == 0xB3 || c2 == 0x93) { normalized.push_back('o'); ++p; continue; }  // ó, Ó
-      if (c2 == 0xBA || c2 == 0x9A || c2 == 0xBC || c2 == 0x9C) { normalized.push_back('u'); ++p; continue; }  // ú, Ú, ü, Ü
+      if (c2 == 0xA1 || c2 == 0x81) {
+        normalized.push_back('a');
+        ++p;
+        continue;
+      }  // á, Á
+      if (c2 == 0xA9 || c2 == 0x89) {
+        normalized.push_back('e');
+        ++p;
+        continue;
+      }  // é, É
+      if (c2 == 0xAD || c2 == 0x8D) {
+        normalized.push_back('i');
+        ++p;
+        continue;
+      }  // í, Í
+      if (c2 == 0xB3 || c2 == 0x93) {
+        normalized.push_back('o');
+        ++p;
+        continue;
+      }  // ó, Ó
+      if (c2 == 0xBA || c2 == 0x9A || c2 == 0xBC || c2 == 0x9C) {
+        normalized.push_back('u');
+        ++p;
+        continue;
+      }  // ú, Ú, ü, Ü
     }
     normalized.push_back(static_cast<char>(std::tolower(c1)));
   }

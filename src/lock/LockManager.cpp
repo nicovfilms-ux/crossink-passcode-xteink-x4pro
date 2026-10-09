@@ -17,19 +17,16 @@ void LockManager::init() {
   }
 }
 
-bool LockManager::shouldLockOnBoot() const {
-  return PinStorage::isLockEnabled() && (SETTINGS.lockOnBoot != 0);
-}
+bool LockManager::shouldLockOnBoot() const { return PinStorage::isLockEnabled() && (SETTINGS.lockOnBoot != 0); }
 
-bool LockManager::shouldLockOnSleep() const {
-  return PinStorage::isLockEnabled() && (SETTINGS.lockOnSleep != 0);
-}
+bool LockManager::shouldLockOnSleep() const { return PinStorage::isLockEnabled() && (SETTINGS.lockOnSleep != 0); }
 
 bool LockManager::shouldLockOnLongPress() const {
   return PinStorage::isLockEnabled() && (SETTINGS.lockOnLongPress != 0);
 }
 
-bool LockManager::shouldLockOnSleepWake(const bool fromTimeout, const uint32_t elapsedSleepSeconds, const bool forcePinLock) const {
+bool LockManager::shouldLockOnSleepWake(const bool fromTimeout, const uint32_t elapsedSleepSeconds,
+                                        const bool forcePinLock) const {
   if (!PinStorage::isLockEnabled()) {
     return false;
   }
@@ -60,10 +57,8 @@ bool LockManager::shouldLockOnSleepWake(const bool fromTimeout, const uint32_t e
 
   const bool expired = (elapsedSleepSeconds >= pinTimeoutSec);
   LOG_INF("LOCK", "Sleep wake: elapsed=%lu s, threshold=%lu s (fromTimeout=%d) -> %s",
-          static_cast<unsigned long>(elapsedSleepSeconds),
-          static_cast<unsigned long>(pinTimeoutSec),
-          fromTimeout ? 1 : 0,
-          expired ? "LOCKED (timeout expired)" : "UNLOCKED (grace period)");
+          static_cast<unsigned long>(elapsedSleepSeconds), static_cast<unsigned long>(pinTimeoutSec),
+          fromTimeout ? 1 : 0, expired ? "LOCKED (timeout expired)" : "UNLOCKED (grace period)");
   return expired;
 }
 

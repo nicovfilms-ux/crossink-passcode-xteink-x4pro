@@ -325,8 +325,7 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   };
 
   static constexpr bool isHomeActionAllowedOnLockScreen(const uint8_t action) {
-    return action == HOME_BUTTON_TOGGLE_FRONTLIGHT ||
-           action == static_cast<uint8_t>(SHORT_PWRBTN::TOGGLE_FRONTLIGHT) ||
+    return action == HOME_BUTTON_TOGGLE_FRONTLIGHT || action == static_cast<uint8_t>(SHORT_PWRBTN::TOGGLE_FRONTLIGHT) ||
            action == static_cast<uint8_t>(SHORT_PWRBTN::TOGGLE_DARK_MODE);
   }
 

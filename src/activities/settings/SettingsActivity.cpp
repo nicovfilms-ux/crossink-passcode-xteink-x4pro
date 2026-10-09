@@ -37,9 +37,6 @@
 #include "SilentRestart.h"
 #include "StatusBarSettingsActivity.h"
 #include "activities/ActivityManager.h"
-#include "lock/LockManager.h"
-#include "lock/PinLockActivity.h"
-#include "lock/PinStorage.h"
 #include "activities/network/WifiSelectionActivity.h"
 #include "activities/reader/GlobalReadingStats.h"
 #include "activities/util/ConfirmationActivity.h"
@@ -53,6 +50,9 @@
 #include "components/UiAppHelpers.h"
 #include "components/icons/frontlightHeaderIcons.h"
 #include "fontIds.h"
+#include "lock/LockManager.h"
+#include "lock/PinLockActivity.h"
+#include "lock/PinStorage.h"
 #include "util/DictionaryRegistry.h"
 #include "util/FrontlightSchedule.h"
 
@@ -544,10 +544,9 @@ void SettingsActivity::openEnumOptionPicker(const SettingInfo& setting) {
   const size_t optionCount = settingEnumOptionCount(setting);
   if (optionCount == 0) return;
 
-  const bool isHomeActionSetting =
-      (setting.valuePtr == &CrossPointSettings::homeButtonTapAction ||
-       setting.valuePtr == &CrossPointSettings::homeButtonDoubleTapAction ||
-       setting.valuePtr == &CrossPointSettings::homeButtonLongPressAction);
+  const bool isHomeActionSetting = (setting.valuePtr == &CrossPointSettings::homeButtonTapAction ||
+                                    setting.valuePtr == &CrossPointSettings::homeButtonDoubleTapAction ||
+                                    setting.valuePtr == &CrossPointSettings::homeButtonLongPressAction);
 
   std::vector<std::string> options;
   options.reserve(optionCount);
@@ -731,47 +730,47 @@ void SettingsActivity::openStringEditor(const SettingInfo& setting) {
   }
 
   const SettingInfo selectedSetting = setting;
-  startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, I18N.get(setting.nameId),
-                                                                 initialText, maxLength, InputType::Text, minLength,
-                                                                 fixedPrefix),
-                         [this, selectedSetting](const ActivityResult& result) {
-                           if (result.isCancelled) {
-                             requestUpdate();
-                             return;
-                           }
+  startActivityForResult(
+      std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, I18N.get(setting.nameId), initialText, maxLength,
+                                              InputType::Text, minLength, fixedPrefix),
+      [this, selectedSetting](const ActivityResult& result) {
+        if (result.isCancelled) {
+          requestUpdate();
+          return;
+        }
 
-                           const auto* kb = std::get_if<KeyboardResult>(&result.data);
-                           if (kb == nullptr) {
-                             requestUpdate();
-                             return;
-                           }
+        const auto* kb = std::get_if<KeyboardResult>(&result.data);
+        if (kb == nullptr) {
+          requestUpdate();
+          return;
+        }
 
-                           std::string value = trimAsciiSpaces(kb->text);
-                           if (selectedSetting.nameId == StrId::STR_DEVICE_NAME &&
-                               (value.length() < CrossPointSettings::MIN_DEVICE_NAME_LENGTH ||
-                                value.length() > CrossPointSettings::MAX_DEVICE_NAME_LENGTH)) {
-                             requestUpdate();
-                             return;
-                           }
+        std::string value = trimAsciiSpaces(kb->text);
+        if (selectedSetting.nameId == StrId::STR_DEVICE_NAME &&
+            (value.length() < CrossPointSettings::MIN_DEVICE_NAME_LENGTH ||
+             value.length() > CrossPointSettings::MAX_DEVICE_NAME_LENGTH)) {
+          requestUpdate();
+          return;
+        }
 
-                           if (selectedSetting.nameId == StrId::STR_CONTACT_PHONE) {
-                             if (value == "+" || value.empty()) {
-                               value.clear();  // If user only left '+', treat as empty
-                             } else if (value.front() != '+') {
-                               value = "+" + value;
-                             }
-                           }
+        if (selectedSetting.nameId == StrId::STR_CONTACT_PHONE) {
+          if (value == "+" || value.empty()) {
+            value.clear();  // If user only left '+', treat as empty
+          } else if (value.front() != '+') {
+            value = "+" + value;
+          }
+        }
 
-                           if (selectedSetting.stringSetter) {
-                             selectedSetting.stringSetter(value);
-                           } else if (selectedSetting.stringMaxLen > 0) {
-                             char* ptr = reinterpret_cast<char*>(&SETTINGS) + selectedSetting.stringOffset;
-                             strncpy(ptr, value.c_str(), selectedSetting.stringMaxLen - 1);
-                             ptr[selectedSetting.stringMaxLen - 1] = '\0';
-                           }
-                           SETTINGS.saveToFile();
-                           requestUpdate();
-                         });
+        if (selectedSetting.stringSetter) {
+          selectedSetting.stringSetter(value);
+        } else if (selectedSetting.stringMaxLen > 0) {
+          char* ptr = reinterpret_cast<char*>(&SETTINGS) + selectedSetting.stringOffset;
+          strncpy(ptr, value.c_str(), selectedSetting.stringMaxLen - 1);
+          ptr[selectedSetting.stringMaxLen - 1] = '\0';
+        }
+        SETTINGS.saveToFile();
+        requestUpdate();
+      });
 }
 
 void SettingsActivity::onEnter() {
@@ -1122,15 +1121,16 @@ void SettingsActivity::toggleCurrentSetting() {
       }
     } else {
       if (PinStorage::hasPin()) {
-        startActivityForResult(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::VerifyForDisable),
-                               [this](const ActivityResult& res) {
-                                 if (!res.isCancelled) {
-                                   SETTINGS.deviceLockEnabled = 0;
-                                   SETTINGS.saveToFile();
-                                 }
-                                 rebuildSettingsLists();
-                                 requestUpdate();
-                               });
+        startActivityForResult(
+            std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::VerifyForDisable),
+            [this](const ActivityResult& res) {
+              if (!res.isCancelled) {
+                SETTINGS.deviceLockEnabled = 0;
+                SETTINGS.saveToFile();
+              }
+              rebuildSettingsLists();
+              requestUpdate();
+            });
         return;
       } else {
         SETTINGS.deviceLockEnabled = 0;
@@ -1248,29 +1248,31 @@ void SettingsActivity::toggleCurrentSetting() {
         break;
       case SettingAction::SecurityChangePin:
         if (!PinStorage::hasPin()) {
-          startActivityForResult(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::SetPin),
-                                 [this](const ActivityResult& res) {
-                                   if (!res.isCancelled) {
-                                     SETTINGS.deviceLockEnabled = 1;
-                                     SETTINGS.saveToFile();
-                                     if (!PinStorage::hasSecurityQuestion()) {
-                                       promptSecurityQuestionSetup();
-                                       return;
-                                     }
-                                   }
-                                   rebuildSettingsLists();
-                                   requestUpdate();
-                                 });
+          startActivityForResult(
+              std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::SetPin),
+              [this](const ActivityResult& res) {
+                if (!res.isCancelled) {
+                  SETTINGS.deviceLockEnabled = 1;
+                  SETTINGS.saveToFile();
+                  if (!PinStorage::hasSecurityQuestion()) {
+                    promptSecurityQuestionSetup();
+                    return;
+                  }
+                }
+                rebuildSettingsLists();
+                requestUpdate();
+              });
         } else {
-          startActivityForResult(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::ChangePin),
-                                 [this](const ActivityResult& res) {
-                                   if (!res.isCancelled && !PinStorage::hasSecurityQuestion()) {
-                                     promptSecurityQuestionSetup();
-                                     return;
-                                   }
-                                   rebuildSettingsLists();
-                                   requestUpdate();
-                                 });
+          startActivityForResult(
+              std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::ChangePin),
+              [this](const ActivityResult& res) {
+                if (!res.isCancelled && !PinStorage::hasSecurityQuestion()) {
+                  promptSecurityQuestionSetup();
+                  return;
+                }
+                rebuildSettingsLists();
+                requestUpdate();
+              });
         }
         break;
       case SettingAction::SecurityChangeQuestion:
@@ -1278,7 +1280,8 @@ void SettingsActivity::toggleCurrentSetting() {
         break;
       case SettingAction::SecurityLockNow:
         LockManager::getInstance().lock(LockTrigger::Manual);
-        activityManager.pushActivity(std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::Unlock));
+        activityManager.pushActivity(
+            std::make_unique<PinLockActivity>(renderer, mappedInput, PinLockActivity::Mode::Unlock));
         break;
       case SettingAction::SecurityDeviceLock:
       case SettingAction::SecurityLostAndFound:
@@ -1422,10 +1425,9 @@ std::string SettingsActivity::settingValueText(const SettingInfo& setting) {
   if (setting.type == SettingType::ENUM && setting.valuePtr != nullptr) {
     const uint8_t displayIndex = enumDisplayIndexForRawValue(setting, SETTINGS.*(setting.valuePtr));
     std::string text = settingEnumOptionLabel(setting, displayIndex);
-    const bool isHomeActionSetting =
-        (setting.valuePtr == &CrossPointSettings::homeButtonTapAction ||
-         setting.valuePtr == &CrossPointSettings::homeButtonDoubleTapAction ||
-         setting.valuePtr == &CrossPointSettings::homeButtonLongPressAction);
+    const bool isHomeActionSetting = (setting.valuePtr == &CrossPointSettings::homeButtonTapAction ||
+                                      setting.valuePtr == &CrossPointSettings::homeButtonDoubleTapAction ||
+                                      setting.valuePtr == &CrossPointSettings::homeButtonLongPressAction);
     if (isHomeActionSetting && SETTINGS.homeButtonOnLockScreenEnabled != 0) {
       const uint8_t rawValue = SETTINGS.*(setting.valuePtr);
       if (!CrossPointSettings::isHomeActionAllowedOnLockScreen(rawValue)) {
@@ -1713,40 +1715,36 @@ void SettingsActivity::render(RenderLock&&) {
 }
 
 void SettingsActivity::promptSecurityQuestionSetup() {
-  std::vector<std::string> options = {
-      tr(STR_QUESTION_GREATEST_LOVE),
-      tr(STR_QUESTION_FIRST_PET),
-      tr(STR_QUESTION_FAVORITE_COUNTRY)
-  };
-  startActivityForResult(
-      std::make_unique<OptionSelectionActivity>(
-          renderer, mappedInput, "SecurityQuestionPicker",
-          StrId::STR_SELECT_SECURITY_QUESTION, options, SETTINGS.securityQuestion),
-      [this](const ActivityResult& result) {
-        if (result.isCancelled) return;
-        const auto* sel = std::get_if<OptionSelectionResult>(&result.data);
-        if (!sel) return;
-        const uint8_t chosenIdx = sel->index;
-        std::string qTitle;
-        if (chosenIdx == 0) {
-          qTitle = tr(STR_QUESTION_GREATEST_LOVE);
-        } else if (chosenIdx == 1) {
-          qTitle = tr(STR_QUESTION_FIRST_PET);
-        } else {
-          qTitle = tr(STR_QUESTION_FAVORITE_COUNTRY);
-        }
+  std::vector<std::string> options = {tr(STR_QUESTION_GREATEST_LOVE), tr(STR_QUESTION_FIRST_PET),
+                                      tr(STR_QUESTION_FAVORITE_COUNTRY)};
+  startActivityForResult(std::make_unique<OptionSelectionActivity>(renderer, mappedInput, "SecurityQuestionPicker",
+                                                                   StrId::STR_SELECT_SECURITY_QUESTION, options,
+                                                                   SETTINGS.securityQuestion),
+                         [this](const ActivityResult& result) {
+                           if (result.isCancelled) return;
+                           const auto* sel = std::get_if<OptionSelectionResult>(&result.data);
+                           if (!sel) return;
+                           const uint8_t chosenIdx = sel->index;
+                           std::string qTitle;
+                           if (chosenIdx == 0) {
+                             qTitle = tr(STR_QUESTION_GREATEST_LOVE);
+                           } else if (chosenIdx == 1) {
+                             qTitle = tr(STR_QUESTION_FIRST_PET);
+                           } else {
+                             qTitle = tr(STR_QUESTION_FAVORITE_COUNTRY);
+                           }
 
-        startActivityForResult(
-            std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, qTitle, "", 40, InputType::Text, 1),
-            [this, chosenIdx](const ActivityResult& kbRes) {
-              if (!kbRes.isCancelled) {
-                const auto* kb = std::get_if<KeyboardResult>(&kbRes.data);
-                if (kb && !kb->text.empty()) {
-                  PinStorage::setSecurityQuestion(chosenIdx, kb->text.c_str());
-                }
-              }
-              rebuildSettingsLists();
-              requestUpdate();
-            });
-      });
+                           startActivityForResult(std::make_unique<KeyboardEntryActivity>(renderer, mappedInput, qTitle,
+                                                                                          "", 40, InputType::Text, 1),
+                                                  [this, chosenIdx](const ActivityResult& kbRes) {
+                                                    if (!kbRes.isCancelled) {
+                                                      const auto* kb = std::get_if<KeyboardResult>(&kbRes.data);
+                                                      if (kb && !kb->text.empty()) {
+                                                        PinStorage::setSecurityQuestion(chosenIdx, kb->text.c_str());
+                                                      }
+                                                    }
+                                                    rebuildSettingsLists();
+                                                    requestUpdate();
+                                                  });
+                         });
 }

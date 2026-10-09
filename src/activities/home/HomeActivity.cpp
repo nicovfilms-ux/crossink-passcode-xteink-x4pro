@@ -167,13 +167,9 @@ void appendHashedFileStateToKey(std::string& key, const std::string& path) {
   key += '\0';
 }
 
-std::string getRecentBookCachePath(const RecentBook& book) {
-  return RecentBookProgress::getCachePath(book);
-}
+std::string getRecentBookCachePath(const RecentBook& book) { return RecentBookProgress::getCachePath(book); }
 
-BookReadingStats loadRecentBookStats(const RecentBook& book) {
-  return RecentBookProgress::loadStats(book);
-}
+BookReadingStats loadRecentBookStats(const RecentBook& book) { return RecentBookProgress::loadStats(book); }
 
 bool loadEpubHighlightedContext(const RecentBook& book, const bool loadProgress, const bool loadChapterTitle,
                                 float* progressPercent, std::string* chapterTitle) {
@@ -2327,7 +2323,8 @@ void HomeActivity::render(RenderLock&&) {
     const int maxCoverHeight = pageHeight - metrics.buttonHintsHeight - metrics.homeTopPadding -
                                metrics.homeMenuTopOffset - requiredMenuHeight;
     homeCoverTileHeight = std::clamp(maxCoverHeight, 0, metrics.homeCoverTileHeight);
-  } else if (static_cast<CrossPointSettings::UI_THEME>(SETTINGS.uiTheme) == CrossPointSettings::UI_THEME::LYRA_3_COVERS) {
+  } else if (static_cast<CrossPointSettings::UI_THEME>(SETTINGS.uiTheme) ==
+             CrossPointSettings::UI_THEME::LYRA_3_COVERS) {
     const int visibleBooks = getVisibleRecentBookCount();
     if (visibleBooks <= 0) {
       homeCoverTileHeight = 180;

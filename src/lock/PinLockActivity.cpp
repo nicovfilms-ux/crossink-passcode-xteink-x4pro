@@ -1,5 +1,6 @@
 #include "PinLockActivity.h"
 
+#include <CrossInkHalFrontlight.h>
 #include <FreeInkUIGfxRenderer.h>
 #include <FreeInkUIIcon.h>
 #include <I18n.h>
@@ -15,11 +16,9 @@
 #include "components/icons/tablerFilledIcons.h"
 #include "fontIds.h"
 #include "lock/LostAndFoundActivity.h"
-#include <CrossInkHalFrontlight.h>
 
-PinLockActivity::PinLockActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
-                                 const Mode mode, const ResumeTarget resumeTarget,
-                                 std::string resumeBookPath)
+PinLockActivity::PinLockActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, const Mode mode,
+                                 const ResumeTarget resumeTarget, std::string resumeBookPath)
     : Activity("PinLock", renderer, mappedInput),
       mode_(mode),
       resumeTarget_(resumeTarget),
@@ -36,9 +35,7 @@ void PinLockActivity::onEnter() {
   requestUpdate();
 }
 
-void PinLockActivity::onExit() {
-  Activity::onExit();
-}
+void PinLockActivity::onExit() { Activity::onExit(); }
 
 void PinLockActivity::setupLayout() {
   keys_.clear();
@@ -61,46 +58,24 @@ void PinLockActivity::setupLayout() {
   dotsY_ = startY - dotsH_ - 25;
 
   const char keyMap[4][3] = {
-      {'1', '2', '3'},
-      {'4', '5', '6'},
-      {'7', '8', '9'},
-      {'B', '0', (mode_ == Mode::Unlock ? 'I' : ' ')}
-  };
+      {'1', '2', '3'}, {'4', '5', '6'}, {'7', '8', '9'}, {'B', '0', (mode_ == Mode::Unlock ? 'I' : ' ')}};
 
   for (int r = 0; r < 4; ++r) {
     for (int c = 0; c < 3; ++c) {
       const char k = keyMap[r][c];
       if (k == ' ') continue;
-      keys_.push_back({
-          k,
-          startX + c * (keyW + gapX),
-          startY + r * (keyH + gapY),
-          keyW,
-          keyH
-      });
+      keys_.push_back({k, startX + c * (keyW + gapX), startY + r * (keyH + gapY), keyW, keyH});
     }
   }
 
   if (mode_ != Mode::Unlock) {
     const int cancelW = 110;
     const int cancelH = 40;
-    keys_.push_back({
-        'X',
-        startX + (totalW - cancelW) / 2,
-        startY + totalH + 18,
-        cancelW,
-        cancelH
-    });
+    keys_.push_back({'X', startX + (totalW - cancelW) / 2, startY + totalH + 18, cancelW, cancelH});
   } else {
     const int forgotW = 240;
     const int forgotH = 38;
-    keys_.push_back({
-        'F',
-        startX + (totalW - forgotW) / 2,
-        startY + totalH + 14,
-        forgotW,
-        forgotH
-    });
+    keys_.push_back({'F', startX + (totalW - forgotW) / 2, startY + totalH + 14, forgotW, forgotH});
   }
 }
 
@@ -321,9 +296,11 @@ void PinLockActivity::renderDotsOnly() {
   for (size_t i = 0; i < dotCount; ++i) {
     const int cx = dotsStartX + static_cast<int>(i) * dotSpacing;
     if (i < enteredPin_.size()) {
-      renderer.fillRoundedRect(cx - dotRadius, dotsCenterY - dotRadius, dotRadius * 2, dotRadius * 2, dotRadius, Color::Black);
+      renderer.fillRoundedRect(cx - dotRadius, dotsCenterY - dotRadius, dotRadius * 2, dotRadius * 2, dotRadius,
+                               Color::Black);
     } else {
-      renderer.drawRoundedRect(cx - dotRadius, dotsCenterY - dotRadius, dotRadius * 2, dotRadius * 2, 1, dotRadius, true);
+      renderer.drawRoundedRect(cx - dotRadius, dotsCenterY - dotRadius, dotRadius * 2, dotRadius * 2, 1, dotRadius,
+                               true);
     }
   }
 
@@ -346,12 +323,11 @@ void PinLockActivity::render(RenderLock&&) {
 
   const int iconY = titleY + 35;
   freeink::ui::GfxRendererTarget target(renderer);
-  target.bitmap(freeink::ui::Rect{static_cast<int16_t>((screenW - icon_tabler_lock_28.w) / 2),
-                                  static_cast<int16_t>(iconY),
-                                  static_cast<int16_t>(icon_tabler_lock_28.w),
-                                  static_cast<int16_t>(icon_tabler_lock_28.h)},
-                freeink::ui::bitmapFromIcon(icon_tabler_lock_28), freeink::ui::BitmapMode::Center,
-                freeink::ui::Paint::solid(freeink::ui::Color::Black));
+  target.bitmap(
+      freeink::ui::Rect{static_cast<int16_t>((screenW - icon_tabler_lock_28.w) / 2), static_cast<int16_t>(iconY),
+                        static_cast<int16_t>(icon_tabler_lock_28.w), static_cast<int16_t>(icon_tabler_lock_28.h)},
+      freeink::ui::bitmapFromIcon(icon_tabler_lock_28), freeink::ui::BitmapMode::Center,
+      freeink::ui::Paint::solid(freeink::ui::Color::Black));
 
   const std::string prompt = getPromptText();
   const auto promptStyle = !errorMessage_.empty() ? EpdFontFamily::BOLD : EpdFontFamily::REGULAR;
@@ -371,9 +347,11 @@ void PinLockActivity::render(RenderLock&&) {
   for (size_t i = 0; i < dotCount; ++i) {
     const int cx = dotsStartX + static_cast<int>(i) * dotSpacing;
     if (i < enteredPin_.size()) {
-      renderer.fillRoundedRect(cx - dotRadius, dotsCenterY - dotRadius, dotRadius * 2, dotRadius * 2, dotRadius, Color::Black);
+      renderer.fillRoundedRect(cx - dotRadius, dotsCenterY - dotRadius, dotRadius * 2, dotRadius * 2, dotRadius,
+                               Color::Black);
     } else {
-      renderer.drawRoundedRect(cx - dotRadius, dotsCenterY - dotRadius, dotRadius * 2, dotRadius * 2, 1, dotRadius, true);
+      renderer.drawRoundedRect(cx - dotRadius, dotsCenterY - dotRadius, dotRadius * 2, dotRadius * 2, 1, dotRadius,
+                               true);
     }
   }
 
@@ -388,27 +366,28 @@ void PinLockActivity::render(RenderLock&&) {
       const int lh = renderer.getLineHeight(UI_12_FONT_ID);
       renderer.drawText(UI_12_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, label, true, EpdFontFamily::BOLD);
     } else if (k.key == 'B' || k.key == 'C') {
-      target.bitmap(freeink::ui::Rect{static_cast<int16_t>(k.x + (k.w - icon_backspace_28.w) / 2),
-                                      static_cast<int16_t>(k.y + (k.h - icon_backspace_28.h) / 2),
-                                      static_cast<int16_t>(icon_backspace_28.w),
-                                      static_cast<int16_t>(icon_backspace_28.h)},
-                    freeink::ui::bitmapFromIcon(icon_backspace_28), freeink::ui::BitmapMode::Center,
-                    freeink::ui::Paint::solid(freeink::ui::Color::Black));
+      target.bitmap(
+          freeink::ui::Rect{static_cast<int16_t>(k.x + (k.w - icon_backspace_28.w) / 2),
+                            static_cast<int16_t>(k.y + (k.h - icon_backspace_28.h) / 2),
+                            static_cast<int16_t>(icon_backspace_28.w), static_cast<int16_t>(icon_backspace_28.h)},
+          freeink::ui::bitmapFromIcon(icon_backspace_28), freeink::ui::BitmapMode::Center,
+          freeink::ui::Paint::solid(freeink::ui::Color::Black));
     } else if (k.key == 'X') {
       const std::string cancel = tr(STR_CANCEL);
       const int lw = renderer.getTextWidth(UI_10_FONT_ID, cancel.c_str(), EpdFontFamily::BOLD);
       const int lh = renderer.getLineHeight(UI_10_FONT_ID);
-      renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, cancel.c_str(), true, EpdFontFamily::BOLD);
+      renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, cancel.c_str(), true,
+                        EpdFontFamily::BOLD);
     } else if (k.key == 'F') {
       const std::string forgot = tr(STR_FORGOT_PIN);
       const int lw = renderer.getTextWidth(UI_10_FONT_ID, forgot.c_str(), EpdFontFamily::REGULAR);
       const int lh = renderer.getLineHeight(UI_10_FONT_ID);
-      renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, forgot.c_str(), true, EpdFontFamily::REGULAR);
+      renderer.drawText(UI_10_FONT_ID, k.x + (k.w - lw) / 2, k.y + (k.h - lh) / 2, forgot.c_str(), true,
+                        EpdFontFamily::REGULAR);
     } else if (k.key == 'I') {
       target.bitmap(freeink::ui::Rect{static_cast<int16_t>(k.x + (k.w - icon_info_28.w) / 2),
                                       static_cast<int16_t>(k.y + (k.h - icon_info_28.h) / 2),
-                                      static_cast<int16_t>(icon_info_28.w),
-                                      static_cast<int16_t>(icon_info_28.h)},
+                                      static_cast<int16_t>(icon_info_28.w), static_cast<int16_t>(icon_info_28.h)},
                     freeink::ui::bitmapFromIcon(icon_info_28), freeink::ui::BitmapMode::Center,
                     freeink::ui::Paint::solid(freeink::ui::Color::Black));
     }
