@@ -324,6 +324,12 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
     HOME_BUTTON_ACTION_COUNT = 26
   };
 
+  static constexpr bool isHomeActionAllowedOnLockScreen(const uint8_t action) {
+    return action == HOME_BUTTON_TOGGLE_FRONTLIGHT ||
+           action == static_cast<uint8_t>(SHORT_PWRBTN::TOGGLE_FRONTLIGHT) ||
+           action == static_cast<uint8_t>(SHORT_PWRBTN::TOGGLE_DARK_MODE);
+  }
+
   static constexpr uint8_t QUICK_ACTION_SLOT_ACTION_COUNT = 23;
 
   // Hide battery percentage

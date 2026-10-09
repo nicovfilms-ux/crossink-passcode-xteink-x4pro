@@ -544,10 +544,22 @@ void SettingsActivity::openEnumOptionPicker(const SettingInfo& setting) {
   const size_t optionCount = settingEnumOptionCount(setting);
   if (optionCount == 0) return;
 
+  const bool isHomeActionSetting =
+      (setting.valuePtr == &CrossPointSettings::homeButtonTapAction ||
+       setting.valuePtr == &CrossPointSettings::homeButtonDoubleTapAction ||
+       setting.valuePtr == &CrossPointSettings::homeButtonLongPressAction);
+
   std::vector<std::string> options;
   options.reserve(optionCount);
   for (uint8_t i = 0; i < optionCount; i++) {
-    options.push_back(settingEnumOptionLabel(setting, i));
+    std::string label = settingEnumOptionLabel(setting, i);
+    if (isHomeActionSetting && SETTINGS.homeButtonOnLockScreenEnabled != 0) {
+      const uint8_t rawValue = enumRawValueForDisplayIndex(setting, i);
+      if (!CrossPointSettings::isHomeActionAllowedOnLockScreen(rawValue)) {
+        label += " (" + std::string(tr(STR_ONLY_UNLOCKED)) + ")";
+      }
+    }
+    options.push_back(std::move(label));
   }
 
   uint8_t currentIndex = 0;
@@ -1409,7 +1421,18 @@ std::string SettingsActivity::settingValueText(const SettingInfo& setting) {
   }
   if (setting.type == SettingType::ENUM && setting.valuePtr != nullptr) {
     const uint8_t displayIndex = enumDisplayIndexForRawValue(setting, SETTINGS.*(setting.valuePtr));
-    return settingEnumOptionLabel(setting, displayIndex);
+    std::string text = settingEnumOptionLabel(setting, displayIndex);
+    const bool isHomeActionSetting =
+        (setting.valuePtr == &CrossPointSettings::homeButtonTapAction ||
+         setting.valuePtr == &CrossPointSettings::homeButtonDoubleTapAction ||
+         setting.valuePtr == &CrossPointSettings::homeButtonLongPressAction);
+    if (isHomeActionSetting && SETTINGS.homeButtonOnLockScreenEnabled != 0) {
+      const uint8_t rawValue = SETTINGS.*(setting.valuePtr);
+      if (!CrossPointSettings::isHomeActionAllowedOnLockScreen(rawValue)) {
+        text += " (" + std::string(tr(STR_ONLY_UNLOCKED)) + ")";
+      }
+    }
+    return text;
   }
   if (setting.type == SettingType::ENUM && setting.valueGetter) {
     return settingEnumOptionLabel(setting, setting.valueGetter());

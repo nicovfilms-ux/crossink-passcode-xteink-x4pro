@@ -35,8 +35,10 @@ Esta edición resuelve la ausencia de privacidad en los lectores electrónicos p
    - En la pantalla de bloqueo, se incluye un acceso directo de información (icono `ℹ`) que abre una tarjeta con los datos de contacto del dueño (Nombre y Teléfono con prefijo internacional automático `+`).
    - Permite que quien encuentre el dispositivo extraviado pueda contactarte sin tener acceso a tus libros ni datos privados.
 5. **Gestos y Controles en Pantalla de Bloqueo**:
-   - **Doble Tap en pantalla para Luz Frontal**: Puedes encender o apagar la luz frontal rápidamente haciendo doble toque en la pantalla sin necesidad de desbloquear el dispositivo.
-   - **Botón Home habilitado en Bloqueo**: Nueva opción en **Ajustes → Controles → Botón Inicio → En pantalla de bloqueo**. Permite usar el **Doble toque** y la **Pulsación larga** configurados por el usuario directamente desde la pantalla de bloqueo, manteniendo el toque simple bloqueado por seguridad para evitar salir de la pantalla de autenticación.
+   - **Doble Tap en pantalla para Luz Frontal**: Puedes encender o apagar la luz frontal rápidamente haciendo doble toque táctil en la pantalla sin necesidad de desbloquear el dispositivo.
+   - **Botón Home en Pantalla de Bloqueo**: Opción en **Ajustes → Controles → Botón Inicio → En pantalla de bloqueo**. Permite usar el botón de inicio físico/capacitivo directamente en la pantalla de bloqueo para las acciones seguras autorizadas (**Luz frontal** y **Modo oscuro**), ya sea configuradas en toque simple, doble toque o pulsación larga.
+   - **Protección contra Bypass de Seguridad**: Cualquier otra acción que intente navegar (como *Volver/Inicio*, *Menú del lector*, marcadores, etc.) queda estrictamente deshabilitada en la pantalla de bloqueo para evitar accesos no autorizados.
+   - **Indicador `(solo desbloqueado)` / `(only unlocked)`**: En el selector de acciones del botón de inicio en Ajustes, cuando la opción "En pantalla de bloqueo" está activada, todas las funciones restringidas muestran claramente esta advertencia.
 6. **Personalización del Título**:
    - Nombre de usuario personalizado en el encabezado de bloqueo (`[Nombre] - XTEINK`).
 

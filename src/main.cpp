@@ -975,6 +975,9 @@ void putTiltSensorToSleepForDeepSleep() {
 
 bool executeX4ProHomeButtonAction(const uint8_t action,
                                   const QuickLockTrigger quickLockTrigger = QuickLockTrigger::None) {
+  if (LockManager::getInstance().isLocked() && !CrossPointSettings::isHomeActionAllowedOnLockScreen(action)) {
+    return false;
+  }
   switch (action) {
     case CrossPointSettings::HOME_BUTTON_BACK_HOME:
       return activityManager.handleHomeButtonBackOrHome();
@@ -1108,7 +1111,9 @@ bool handleX4ProHomeKeyShortcuts() {
     // away before a second capacitive-key tap can be recognized.
     x4ProHomeKeyTapPending = false;
     if (isDeviceLocked) {
-      // Single tap is disabled on lock screen (does not go back/home or trigger tap shortcuts)
+      if (CrossPointSettings::isHomeActionAllowedOnLockScreen(SETTINGS.homeButtonTapAction)) {
+        executeX4ProHomeButtonAction(SETTINGS.homeButtonTapAction, QuickLockTrigger::HomeTap);
+      }
       completedPendingTap = true;
     } else if (SETTINGS.homeButtonTapAction == CrossPointSettings::HOME_BUTTON_BACK_HOME) {
       // Keep reader menus and other overlays on their existing local Home route.
@@ -1122,6 +1127,12 @@ bool handleX4ProHomeKeyShortcuts() {
   if (wasX4ProHomeKeyLongPressed()) {
     // A hold is a separate gesture, not the second half of a double tap.
     x4ProHomeKeyTapPending = false;
+    if (isDeviceLocked) {
+      if (CrossPointSettings::isHomeActionAllowedOnLockScreen(SETTINGS.homeButtonLongPressAction)) {
+        executeX4ProHomeButtonAction(SETTINGS.homeButtonLongPressAction, QuickLockTrigger::HomeLongPress);
+      }
+      return true;
+    }
     if (SETTINGS.homeButtonLongPressAction == CrossPointSettings::HOME_BUTTON_READER_MENU) {
       if (!isDeviceLocked && activityManager.isReaderActivity()) {
         return activityManager.openReaderMenuFromShortcut();
@@ -1141,6 +1152,12 @@ bool handleX4ProHomeKeyShortcuts() {
   }
 
   x4ProHomeKeyTapPending = false;
+  if (isDeviceLocked) {
+    if (CrossPointSettings::isHomeActionAllowedOnLockScreen(SETTINGS.homeButtonDoubleTapAction)) {
+      executeX4ProHomeButtonAction(SETTINGS.homeButtonDoubleTapAction, QuickLockTrigger::HomeDoubleTap);
+    }
+    return true;
+  }
   executeX4ProHomeButtonAction(SETTINGS.homeButtonDoubleTapAction, QuickLockTrigger::HomeDoubleTap);
   return true;
 }
