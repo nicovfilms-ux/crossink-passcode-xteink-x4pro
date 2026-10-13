@@ -39,7 +39,10 @@ Esta edición resuelve la ausencia de privacidad en los lectores electrónicos p
    - **Botón Home en Pantalla de Bloqueo**: Opción en **Ajustes → Controles → Botón Inicio → En pantalla de bloqueo**. Permite usar el botón de inicio físico/capacitivo directamente en la pantalla de bloqueo para las acciones seguras autorizadas (**Luz frontal** y **Modo oscuro**), ya sea configuradas en toque simple, doble toque o pulsación larga.
    - **Protección contra Bypass de Seguridad**: Cualquier otra acción que intente navegar (como *Volver/Inicio*, *Menú del lector*, marcadores, etc.) queda estrictamente deshabilitada en la pantalla de bloqueo para evitar accesos no autorizados.
    - **Indicador `(solo desbloqueado)` / `(only unlocked)`**: En el selector de acciones del botón de inicio en Ajustes, cuando la opción "En pantalla de bloqueo" está activada, todas las funciones restringidas muestran claramente esta advertencia.
-6. **Personalización del Título**:
+6. **Barra de Estado en Bloqueo (Reloj y Batería en Tiempo Real)**:
+   - Visualización superior nativa en la pantalla de bloqueo en la posición predeterminada de Home (hora exacta centrada y porcentaje de batería con icono en el lateral derecho).
+   - Actualización dinámica por minuto y por cambio de porcentaje de carga mediante refresco rápido (*fast refresh*), manteniendo la información siempre al día sin parpadeos molestos.
+7. **Personalización del Título**:
    - Nombre de usuario personalizado en el encabezado de bloqueo (`[Nombre] - XTEINK`).
 
 ---

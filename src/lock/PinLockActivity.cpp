@@ -3,6 +3,8 @@
 #include <CrossInkHalFrontlight.h>
 #include <FreeInkUIGfxRenderer.h>
 #include <FreeInkUIIcon.h>
+#include <HalClock.h>
+#include <HalPowerManager.h>
 #include <I18n.h>
 
 #include <algorithm>
@@ -32,6 +34,9 @@ void PinLockActivity::onEnter() {
   errorMessage_.clear();
   errorUntilMs_ = 0;
   needsFullRepaint_ = true;
+  lastRenderedTime_[0] = '\0';
+  lastRenderedBattery_ = 0xFFFF;
+  lastHeaderPollMs_ = 0;
   requestUpdate();
 }
 
@@ -315,10 +320,24 @@ void PinLockActivity::render(RenderLock&&) {
   const int screenW = renderer.getScreenWidth();
   const int screenH = renderer.getScreenHeight();
 
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, screenW, metrics.homeTopPadding}, nullptr);
+  if (!SETTINGS.shouldShowClockOutsideReader()) {
+    GUI.drawTopStatusBarClock(renderer, metrics.topPadding, nullptr, false,
+                              BaseTheme::homeHeaderClockTextYOffset(renderer), false, true);
+  }
+
+  char currentTime[16] = {0};
+  if (halClock.formatCurrentTime(currentTime, sizeof(currentTime), SETTINGS.clockUtcOffsetQ,
+                                 SETTINGS.clockFormat == 1)) {
+    strncpy(lastRenderedTime_, currentTime, sizeof(lastRenderedTime_) - 1);
+  }
+  lastRenderedBattery_ = powerManager.getBatteryPercentage();
+
   const std::string userName = SETTINGS.userName[0] != '\0' ? SETTINGS.userName : "";
   const std::string title = !userName.empty() ? (userName + " - XTEINK") : "XTEINK";
   const int titleW = renderer.getTextWidth(UI_12_FONT_ID, title.c_str(), EpdFontFamily::BOLD);
-  const int titleY = (screenH > 600) ? 100 : 25;
+  const int titleY = (screenH > 600) ? 100 : (metrics.topPadding + metrics.homeTopPadding + 10);
   renderer.drawText(UI_12_FONT_ID, (screenW - titleW) / 2, titleY, title.c_str(), true, EpdFontFamily::BOLD);
 
   const int iconY = titleY + 35;
@@ -398,8 +417,12 @@ void PinLockActivity::render(RenderLock&&) {
   const int osFooterY = (screenH > 600) ? (screenH - 32) : (screenH - 22);
   renderer.drawText(UI_10_FONT_ID, (screenW - osFooterW) / 2, osFooterY, osFooter, true, EpdFontFamily::REGULAR);
 
-  renderer.displayBuffer(HalDisplay::FULL_REFRESH);
-  needsFullRepaint_ = false;
+  if (needsFullRepaint_) {
+    renderer.displayBuffer(HalDisplay::FULL_REFRESH);
+    needsFullRepaint_ = false;
+  } else {
+    renderer.displayBuffer(HalDisplay::FAST_REFRESH);
+  }
 }
 
 void PinLockActivity::loop() {
@@ -408,6 +431,25 @@ void PinLockActivity::loop() {
     errorMessage_.clear();
     needsFullRepaint_ = true;
     requestUpdate();
+  }
+
+  const unsigned long now = millis();
+  if (now - lastHeaderPollMs_ >= 1000) {
+    lastHeaderPollMs_ = now;
+    char currentTime[16] = {0};
+    bool needsClockUpdate = false;
+    if (halClock.formatCurrentTime(currentTime, sizeof(currentTime), SETTINGS.clockUtcOffsetQ,
+                                   SETTINGS.clockFormat == 1)) {
+      if (lastRenderedTime_[0] != '\0' && strcmp(lastRenderedTime_, currentTime) != 0) {
+        needsClockUpdate = true;
+      }
+    }
+    const uint16_t currentBattery = powerManager.getBatteryPercentage();
+    const bool needsBatteryUpdate = (lastRenderedBattery_ != 0xFFFF && currentBattery != lastRenderedBattery_);
+
+    if (needsClockUpdate || needsBatteryUpdate) {
+      requestUpdate();
+    }
   }
 
   int tx = 0;

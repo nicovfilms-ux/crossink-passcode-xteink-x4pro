@@ -67,4 +67,8 @@ class PinLockActivity final : public Activity {
   unsigned long lastScreenTapAt_ = 0;
   int lastTapX_ = -1;
   int lastTapY_ = -1;
+
+  char lastRenderedTime_[16] = {0};
+  uint16_t lastRenderedBattery_ = 0xFFFF;
+  unsigned long lastHeaderPollMs_ = 0;
 };
